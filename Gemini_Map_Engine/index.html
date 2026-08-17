@@ -86,6 +86,7 @@
     <script src="src/engine/Three_js_system/player_state_v3.js"></script>
     <script src="src/engine/Three_js_system/menu_system.js"></script>
     <script src="src/engine/Three_js_system/options_menu_v3.js"></script>
+    <script src="src/engine/Three_js_system/shrine_system_v3.js"></script>
     <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
     <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
     <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
@@ -174,7 +175,15 @@
         hm.flattenCircle(0.85, 0.5, 0.12, 0.08);   // east lake shelf
         hm.flattenCircle(0.5, 0.88, 0.14, 0.06);   // south beach/forest
         // TP field pads
+        // OoT-style terrain holes / gorges (deep sinks)
+        hm.brush(0.62, 0.55, 0.04, -0.35);
+        hm.brush(0.58, 0.58, 0.03, -0.28);
+        hm.brush(0.35, 0.62, 0.035, -0.32);
+        hm.brush(0.70, 0.40, 0.03, -0.25);
+        hm.brush(0.28, 0.35, 0.03, -0.22);
+        // OoT gorge
         const heights = hm.getFloats();
+
         const nrmBake = NormalmapGeneratorV3.fromHeightmap(hm, { strength: 2.4 });
 
         terrain = TerrainGeneratorV3.createFromHeights(scene, heights, {
@@ -738,6 +747,146 @@
         makeSign('← HUB CENTER', -100, 180, '#00ff66');
         makeSign('D7 FACTORY', 0, -ZONE_L * 0.42 + 120, '#ff6644');
         makeSign('D8 PARALLEL', -280, -ZONE_L * 0.42 + 280, '#44ff66');
+
+        // ---- Cave shrines ----
+        let shrineSystem = null;
+        if (typeof ShrineSystemV3 !== 'undefined') {
+            shrineSystem = ShrineSystemV3.create(scene, {
+                S: S, terrain: terrain, count: 12,
+                zoneW: ZONE_W, zoneL: ZONE_L,
+                floorY: RoomBuilderV3.FLOOR_Y,
+                worldSeed: 0xC2CAFE,
+                onPause: function (p) { isOverlayOpen = p; }
+            });
+            if (shrineSystem.solidBoxes && room.solidBoxes) {
+                room.solidBoxes = room.solidBoxes.concat(shrineSystem.solidBoxes);
+            }
+            window._shrineSystem = shrineSystem;
+            // Signs at each shrine for visibility (next version can use unique icons)
+            if (shrineSystem.list) {
+                shrineSystem.list.forEach(function (s, i) {
+                    makeSign('CAVE ' + (i + 1), s.x, s.z + 45, '#ffee44');
+                });
+            }
+        }
+
+        // ---- Placeholder villages (non-enterable) ----
+        (function placeVillages() {
+            const sites = [
+                { x: 900, z: 600, name: 'EAST HAMLET' },
+                { x: -1800, z: 1400, name: 'WOODS REST' },
+                { x: 1200, z: -900, name: 'RIDGE TOWN' },
+                { x: -800, z: 2800, name: 'SOUTH VILLAGE' }
+            ];
+            const shapes = [];
+            sites.forEach(function (v, vi) {
+                const gy = terrain ? terrain.getHeight(v.x, v.z) : RoomBuilderV3.FLOOR_Y;
+                for (let i = 0; i < 5; i++) {
+                    const ox = (i % 3) * 55 - 55;
+                    const oz = Math.floor(i / 3) * 60 - 20;
+                    shapes.push(S({
+                        id: 'vil_' + vi + '_' + i, layer: 'L2', geo: 'Cube',
+                        scale: { x: 40, y: 32 + (i % 2) * 12, z: 36 }, sizeZ: 36,
+                        position: { x: v.x + ox, y: gy + 20, z: v.z + oz },
+                        color: i % 2 ? '#6a5a48' : '#5a4a3a', solid: true
+                    }));
+                    shapes.push(S({
+                        id: 'vilr_' + vi + '_' + i, layer: 'L3', geo: 'Cube',
+                        scale: { x: 44, y: 8, z: 40 }, sizeZ: 40,
+                        position: { x: v.x + ox, y: gy + 40 + (i % 2) * 6, z: v.z + oz },
+                        color: '#8a4030', solid: false
+                    }));
+                }
+                shapes.push(S({
+                    id: 'vilwell_' + vi, layer: 'L2', geo: 'Cube',
+                    scale: { x: 18, y: 14, z: 18 }, sizeZ: 18,
+                    position: { x: v.x + 10, y: gy + 8, z: v.z + 50 },
+                    color: '#4a4a55', solid: true
+                }));
+                makeSign(v.name, v.x, v.z + 90, '#ddeebb');
+            });
+            const vr = RoomBuilderV3.build(scene, shapes, {
+                layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+            });
+            if (vr.solidBoxes && room.solidBoxes) {
+                room.solidBoxes = room.solidBoxes.concat(vr.solidBoxes.filter(function (b) {
+                    return (b.maxX - b.minX) < 90;
+                }));
+            }
+        })();
+
+        // ---- 3 Fairy fountains ----
+        (function placeFairies() {
+            const spots = [
+                { x: 400, z: -400 },
+                { x: -2200, z: 400 },
+                { x: 600, z: 2200 }
+            ];
+            const shapes = [];
+            spots.forEach(function (f, i) {
+                const gy = terrain ? terrain.getHeight(f.x, f.z) : RoomBuilderV3.FLOOR_Y;
+                shapes.push(S({
+                    id: 'fairy_b_' + i, layer: 'L1', geo: 'Cube',
+                    scale: { x: 70, y: 8, z: 70 }, sizeZ: 70,
+                    position: { x: f.x, y: gy + 4, z: f.z },
+                    color: '#2a4a6a', solid: true
+                }));
+                shapes.push(S({
+                    id: 'fairy_w_' + i, layer: 'L1', geo: 'Cube',
+                    scale: { x: 50, y: 4, z: 50 }, sizeZ: 50,
+                    position: { x: f.x, y: gy + 8, z: f.z },
+                    color: '#44aaff', solid: false
+                }));
+                for (let pi = 0; pi < 4; pi++) {
+                    const ang = (pi / 4) * Math.PI * 2;
+                    shapes.push(S({
+                        id: 'fairy_p_' + i + '_' + pi, layer: 'L2', geo: 'Cube',
+                        scale: { x: 10, y: 36, z: 10 }, sizeZ: 10,
+                        position: {
+                            x: f.x + Math.cos(ang) * 38,
+                            y: gy + 22,
+                            z: f.z + Math.sin(ang) * 38
+                        },
+                        color: '#cceeff', solid: true
+                    }));
+                }
+                makeSign('FAIRY\nFOUNTAIN', f.x, f.z + 60, '#ff88cc');
+            });
+            const fr = RoomBuilderV3.build(scene, shapes, {
+                layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+            });
+            if (fr.solidBoxes && room.solidBoxes) {
+                room.solidBoxes = room.solidBoxes.concat(fr.solidBoxes);
+            }
+            window._fairyFountains = spots;
+        })();
+
+        // ---- Gorge hole markers ----
+        (function placeGorgeMarkers() {
+            const holes = [
+                { x: 0.62, z: 0.55 },
+                { x: 0.35, z: 0.62 },
+                { x: 0.70, z: 0.40 },
+                { x: 0.28, z: 0.35 }
+            ];
+            const shapes = [];
+            holes.forEach(function (h, i) {
+                const wx = (h.x - 0.5) * ZONE_W;
+                const wz = (h.z - 0.5) * ZONE_L;
+                const gy = terrain ? terrain.getHeight(wx, wz) : RoomBuilderV3.FLOOR_Y;
+                shapes.push(S({
+                    id: 'gorge_' + i, layer: 'L2', geo: 'Cube',
+                    scale: { x: 90, y: 10, z: 90 }, sizeZ: 90,
+                    position: { x: wx, y: gy + 3, z: wz },
+                    color: '#1a1510', solid: false
+                }));
+                makeSign('HOLE', wx, wz + 50, '#aa8866');
+            });
+            RoomBuilderV3.build(scene, shapes, {
+                layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+            });
+        })();
+
         makeSign('D3 ICE', 410, -ZONE_L * 0.28 + 60, '#88ccff');
         makeSign('D4 LAKE', ZONE_W * 0.38, 240, '#4488cc');
         makeSign('D5 SOUTH', 0, ZONE_L * 0.42 - 20, '#ccaa44');
@@ -1187,6 +1336,7 @@
             if (typeof optionsMenu !== 'undefined' && optionsMenu) {
                 optionsMenu.update(pos);
             }
+            if (shrineSystem && shrineSystem.update) shrineSystem.update(camera);
         }
 
         function warpTo(url) {
@@ -1227,6 +1377,7 @@
 
         function checkScreenInteraction() {
             const p = player.position;
+            if (typeof shrineSystem !== 'undefined' && shrineSystem && shrineSystem.tryInteract(p)) return;
             // Sword pickup in hollow rock
             if (!window._swordTaken && window._swordPickup &&
                 Math.abs(p.x - window._swordPickup.position.x) < 40 &&
