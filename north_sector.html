@@ -397,9 +397,8 @@
 
       // Warps
       if (pos.z > halfL - 30) { window.location.href = 'index.html'; return; } // south → hub
-      if (pos.z < -halfL + 30) { window.location.href = 'secret_factory_2.html'; return; } // north deeper
-      if (pos.x < -halfW + 20) { window.location.href = 'road_1.html'; return; }
-      if (pos.x > halfW - 20) { window.location.href = 'road_2.html'; return; }
+      if (pos.z < -halfL + 30) { window.location.href = 'industrial_sector.html'; return; } // north deeper
+      if (pos.x > halfW - 20) { window.location.href = 'east_sector.html'; return; }
 
       if (Math.abs(pos.x - FX) < 50 && Math.abs(pos.z - (FZ + 70)) < 50) {
         hudSub.textContent = '[ F — ENTER FACTORY / INDUSTRIAL ]';

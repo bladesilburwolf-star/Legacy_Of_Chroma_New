@@ -1056,13 +1056,10 @@
             //   SOUTH → south_sector.html (Forest edge / Beach)
             const halfW = 2100; // ZONE_W/2 expanded west
             const halfL = 2500;
-            // Corner priority before pure cardinals
-            if (pos.x >= 900 && pos.z >= 1800) { warpTo('lake_sector.html'); return; }   // SE Lake
-            if (pos.x <= -900 && pos.z >= 1800) { warpTo('desert_sector.html'); return; } // SW Desert
             // WEST merged into hub — soft bound only (no road_1 warp)
             if (pos.x <= -halfW) { pos.x = -halfW + 2; }
-            if (pos.x >=  halfW) { warpTo('road_2.html'); return; }        // EAST
-            if (pos.z <= -halfL) { warpTo('secret_factory.html'); return; } // NORTH
+            if (pos.x >=  halfW) { warpTo('east_sector.html'); return; }        // EAST
+            if (pos.z <= -halfL) { warpTo('north_sector.html'); return; } // NORTH
             if (pos.z >=  halfL) { warpTo('south_sector.html'); return; }  // SOUTH
 
             // CameraControlsV3: drag orbit + wheel zoom (south_sector pattern)
@@ -1142,11 +1139,6 @@
             if (Math.abs(p.x - (-1550)) < 70 && Math.abs(p.z - (-200)) < 80) {
                 warpTo('d_1.html'); return;
             }
-            // Arcade house door
-            if (Math.abs(p.x - (-1100)) < 45 && Math.abs(p.z - (-300)) < 45) {
-                warpTo('arcade_room_1.html'); return;
-            }
-        }
 
         function openOverlay() { /* stage menu removed */ }
 

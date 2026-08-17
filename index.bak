@@ -37,35 +37,6 @@
         #hud .title { font-size: 14px; letter-spacing: 0.1em; }
         #hud .sub { font-size: 11px; color: #88ffaa; margin-top: 4px; }
 
-        #stage-select-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.92); z-index: 100;
-            flex-direction: column; justify-content: center; align-items: center;
-            border: 4px solid #ff0055;
-            box-shadow: inset 0 0 30px rgba(255, 0, 85, 0.5);
-        }
-        .stage-title {
-            font-size: 24px; color: #ff0055; text-shadow: 0 0 12px #ff0055;
-            margin-bottom: 25px; letter-spacing: 2px; text-align: center;
-        }
-        .stage-list {
-            display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 500px;
-        }
-        .stage-card {
-            background: rgba(20, 0, 10, 0.8); border: 2px solid #00ffaa;
-            padding: 15px 20px; color: #00ffaa; cursor: pointer;
-            text-shadow: 0 0 6px #00ffaa; font-family: 'RetroCGA', monospace;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s ease-in-out;
-        }
-        .stage-card:hover {
-            background: #00ffaa; color: #000; text-shadow: none;
-            box-shadow: 0 0 15px #00ffaa; transform: scale(1.03);
-        }
-        .close-hint {
-            margin-top: 30px; font-size: 12px; color: #ffff00; text-shadow: 0 0 5px #ffff00;
-        }
-
         #status {
             position: absolute; bottom: 18px; left: 35px; z-index: 20;
             font-size: 11px; color: #66cc88;
@@ -91,46 +62,43 @@
     <div class="scanlines"></div>
 
     <div id="hud">
-        <div class="title">NEONDROMEDA // CENTRAL SECTOR</div>
-        <div class="sub" id="hud-sub">CONTROLS: WASD = MOVE PLAYER | F = INTERACT WITH SCREEN</div>
-    </div>
-
-
-    <div id="stage-select-overlay">
-        <div class="stage-title">[ SELECT DUNGEON TERMINAL ]</div>
-        <div class="stage-list">
-            <div class="stage-card" onclick="warpTo('road_1.html')">
-                <span>1. ROAD TO ARCADE 1 (WEST)</span>
-                <span>[KEY: 1]</span>
-            </div>
-            <div class="stage-card" onclick="warpTo('road_2.html')">
-                <span>2. ROAD TO ARCADE 2 (EAST)</span>
-                <span>[KEY: 2]</span>
-            </div>
-            <div class="stage-card" onclick="warpTo('secret_factory.html')">
-                <span>3. SECRET FACTORY (NORTH)</span>
-                <span>[KEY: 3]</span>
-            </div>
-            <div class="stage-card" onclick="warpTo('main_menu.html')">
-                <span>4. MAIN MENU / CYBERDECK (SOUTH)</span>
-                <span>[KEY: 4]</span>
-            </div>
-        </div>
-        <div class="close-hint">[ PRESS 'F' OR 'ESC' TO CANCEL ]</div>
+        <div class="title">NEONDROMEDA // CENTRAL + WEST OPEN ZONE</div>
+        <div class="sub" id="hud-sub">WASD MOVE | ARROWS camera | F INTERACT | WEST = WOODS/TOMB</div>
     </div>
 
     <div id="status">Loading Hub...</div>
 
+    <!-- DIRECT LOAD - bypasses chroma_engine to fix Heightmap not defined bug -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
     <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/terrain_generator_v3.js"></script>
     <script src="src/engine/Three_js_system/heightmap_generator_v3.js"></script>
     <script src="src/engine/Three_js_system/normalmap_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/terrain_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/paint_terrain.js"></script>
+    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
     <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+    <script src="src/engine/Three_js_system/skybox_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/night_spawn_v3.js"></script>
+    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/player_state_v3.js"></script>
+    <script src="src/engine/Three_js_system/menu_system.js"></script>
+    <script src="src/engine/Three_js_system/options_menu_v3.js"></script>
+    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
+    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
 
     <script>
-    (function () {
+    (async function () {
+        console.log('DIRECT LOAD CHECK:', {
+            THREE: typeof THREE,
+            RoomBuilderV3: typeof RoomBuilderV3,
+            HeightmapGeneratorV3: typeof HeightmapGeneratorV3,
+            NormalmapGeneratorV3: typeof NormalmapGeneratorV3,
+            TerrainGeneratorV3: typeof TerrainGeneratorV3
+        });
         const container = document.getElementById('canvas-container');
         const statusEl  = document.getElementById('status');
         const hudSub    = document.getElementById('hud-sub');
@@ -139,7 +107,7 @@
         scene.background = new THREE.Color(0x050508);
         scene.fog = new THREE.FogExp2(0x050508, 0.0015);
 
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 12000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -162,27 +130,43 @@
         // Design intent was UE-style units (cm). Our Three.js rooms use
         // ~1 unit ≈ gameplay stride (D1 is 960×720). Scale ×10 so the
         // central Open Zone is a real overworld chunk, not a closet.
-        const ZONE_L = 5000;   // length (Z)  — was 500 UU
-        const ZONE_W = 2560;   // width  (X)  — was 256 UU
+        const ZONE_L = 5000;   // length (Z)
+        const ZONE_W = 4200;   // width  (X) — expanded to merge West / Lost Woods
         const ZONE_H = 2560;   // height budget
 
-        // Skybox sized to zone height envelope
-        const skyGeo = new THREE.SphereGeometry(Math.max(ZONE_L, ZONE_W) * 1.2, 48, 32);
-        skyGeo.scale(-1, 1, 1);
-        scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({
-            map: prep(loader.load('skybox_monochrome.jpg')),
-            side: THREE.DoubleSide
-        })));
-        scene.fog = new THREE.FogExp2(0x020204, 0.0015);
+        // Day/night skybox cycle — samples in assets/textures/skybox/
+        scene.fog = new THREE.FogExp2(0x87a0c0, 0.00048); // denser — hides zone edges
+        const sky = SkyboxSystemV3.create(scene, {
+            radius: Math.max(ZONE_L, ZONE_W) * 1.4,
+            cycleMinutes: 8,
+            startHour: 10,
+            loader: loader,
+            dayFog: 0x87a0c0,
+            nightFog: 0x050510
+        });
+        sky.whenReady().then(function () {
+            console.log('Skybox cycle ready');
+            statusEl.textContent = 'Sky day/night cycle ready';
+        });
+        const clock = ClockSystemV3.create({ x: 35, y: 40, hour: 10 });
 
         // ---- CE1 heightmap + normal bake, grass surface ----
         let terrain = null;
         const TERRAIN_RES = 96;
         const hm = HeightmapGeneratorV3.create({ resolution: TERRAIN_RES, seed: 17 });
         hm.fbm({ scale: 3.2, octaves: 5 });
-        // Flat plateau at center (slime / cave) and near terminal spawn
-        hm.flattenCircle(0.5, 0.5, 0.06, 0.04);
+        // Terminal pad north; hillside shelf west-of-center for start cave + slime
         hm.flattenCircle(0.5, 0.28, 0.05, 0.03); // north terminal area (uv)
+        // Hillside shelf: u~0.38 (west), v~0.52 — side of a rise
+        hm.flattenCircle(0.38, 0.52, 0.055, 0.12);
+        // Soft path from shelf toward terminal
+        hm.flattenCircle(0.44, 0.42, 0.04, 0.08);
+        // West Lost Woods + tomb courtyard (merged road_1)
+        hm.flattenCircle(0.12, 0.48, 0.10, 0.06); // path into woods
+        hm.flattenCircle(0.08, 0.42, 0.12, 0.04); // tomb courtyard pad
+        // North snow range (raise) + crevice channel
+        hm.flattenCircle(0.5, 0.12, 0.28, 0.55);
+        hm.flattenCircle(0.5, 0.18, 0.04, 0.02); // crevice path low
         const heights = hm.getFloats();
         const nrmBake = NormalmapGeneratorV3.fromHeightmap(hm, { strength: 2.4 });
 
@@ -194,26 +178,10 @@
             floorY: RoomBuilderV3.FLOOR_Y
         });
 
-        // Grass albedo + baked normal
+        // Grass albedo + baked normal - with fallbacks
+        let grassLoaded = false;
         (function applyGrassAndNormal() {
-            const grass = prep(loader.load('assets/textures/grass1.jpg'));
-            grass.wrapS = THREE.RepeatWrapping;
-            grass.wrapT = THREE.RepeatWrapping;
-            grass.repeat.set(ZONE_W / 200, ZONE_L / 200);
-            const normalTex = nrmBake.toTexture();
-            // Upgrade material so normal map is visible
-            const mat = new THREE.MeshStandardMaterial({
-                map: grass,
-                normalMap: normalTex,
-                normalScale: new THREE.Vector2(1.2, 1.2),
-                vertexColors: true,
-                roughness: 0.92,
-                metalness: 0.05,
-                side: THREE.DoubleSide
-            });
-            terrain.mesh.material.dispose();
-            terrain.mesh.material = mat;
-            // Light so Standard material reads
+            // Add lights FIRST so material is visible
             if (!scene.getObjectByName('terrain-sun')) {
                 const sun = new THREE.DirectionalLight(0xfff5e0, 0.85);
                 sun.name = 'terrain-sun';
@@ -221,20 +189,94 @@
                 scene.add(sun);
                 scene.add(new THREE.AmbientLight(0x88aa77, 0.45));
             }
-            statusEl.textContent = 'Terrain ready — grass + height + normal';
+            
+            const grass = prep(loader.load('assets/textures/grass1.jpg',
+                (tex)=>{
+                    console.log('Grass loaded OK');
+                    tex.wrapS = THREE.RepeatWrapping;
+                    tex.wrapT = THREE.RepeatWrapping;
+                    tex.repeat.set(ZONE_W / 200, ZONE_L / 200);
+                    grassLoaded = true;
+                    statusEl.textContent = 'Terrain ready — grass + height + normal';
+                },
+                null,
+                (e)=>{
+                    console.warn('Grass texture 404, using vertex colors only', e);
+                    statusEl.textContent = 'Terrain: grass.jpg missing - using fallback colors (check assets/textures/grass1.jpg)';
+                }
+            ));
+            grass.wrapS = THREE.RepeatWrapping;
+            grass.wrapT = THREE.RepeatWrapping;
+            grass.repeat.set(ZONE_W / 200, ZONE_L / 200);
+            
+            try {
+                const normalTex = nrmBake.toTexture();
+                const mat = new THREE.MeshStandardMaterial({
+                    map: grass,
+                    normalMap: normalTex,
+                    normalScale: new THREE.Vector2(1.2, 1.2),
+                    vertexColors: true,
+                    roughness: 0.92,
+                    metalness: 0.05,
+                    side: THREE.DoubleSide
+                });
+                if(terrain && terrain.mesh) {
+                    terrain.mesh.material.dispose();
+                    terrain.mesh.material = mat;
+                }
+            } catch(err) {
+                console.error('Normal bake failed, keeping default material', err);
+            }
+            statusEl.textContent = 'Terrain generating...';
         })();
 
-        // Chromac Terminal (north-central landmark)
-        const terminal = new THREE.Mesh(
-            new THREE.PlaneGeometry(140, 105),
-            new THREE.MeshBasicMaterial({
-                map: prep(loader.load('chromac.jpg')),
-                transparent: true,
-                side: THREE.DoubleSide
-            })
-        );
-        terminal.position.set(0, 25, -ZONE_L * 0.28);
-        scene.add(terminal);
+        // ---- PaintTerrainV3 biome blend (forest / dirt path / rock / meadow) ----
+        try {
+            if (typeof PaintTerrainV3 !== 'undefined' && terrain && terrain.mesh) {
+                const painter = PaintTerrainV3.create({
+                    resolution: TERRAIN_RES,
+                    bands: [
+                        { max: 0.22, color: 0xc2b280 },
+                        { max: 0.50, color: 0x3d7a3d },
+                        { max: 0.72, color: 0x2f5a2f },
+                        { max: 0.88, color: 0x6b6b5a },
+                        { max: 1.01, color: 0xe8e8f0 }
+                    ]
+                });
+                painter.autoPaintFromHeights(heights, { slopeInfluence: 0.85 });
+                // South forest belt — deep green
+                painter.paintBrush(0.5, 0.72, 0.22, [0.12, 0.32, 0.14], 0.75);
+                painter.paintBrush(0.35, 0.78, 0.14, [0.10, 0.28, 0.12], 0.7);
+                painter.paintBrush(0.65, 0.76, 0.14, [0.10, 0.28, 0.12], 0.7);
+                // West forest approach (toward Lost Woods)
+                painter.paintBrush(0.18, 0.50, 0.16, [0.14, 0.30, 0.14], 0.65);
+                // Merged west woods (was road_1)
+                painter.paintBrush(0.10, 0.48, 0.18, [0.10, 0.26, 0.12], 0.8);
+                painter.paintBrush(0.08, 0.40, 0.10, [0.28, 0.28, 0.26], 0.7); // tomb stone ground
+                painter.paintBrush(0.14, 0.55, 0.12, [0.12, 0.28, 0.12], 0.7);
+                // East meadow / lake tint
+                painter.paintBrush(0.82, 0.55, 0.14, [0.22, 0.40, 0.38], 0.55);
+                // Dirt path from hillside start toward terminal
+                painter.paintBrush(0.40, 0.48, 0.06, [0.45, 0.36, 0.22], 0.8);
+                painter.paintBrush(0.45, 0.40, 0.05, [0.45, 0.36, 0.22], 0.75);
+                painter.paintBrush(0.50, 0.32, 0.05, [0.42, 0.34, 0.20], 0.7);
+                // Hillside start shelf
+                painter.paintBrush(0.38, 0.52, 0.07, [0.38, 0.42, 0.22], 0.85);
+                // Rocky slopes
+                painter.paintBrush(0.55, 0.48, 0.08, [0.42, 0.42, 0.38], 0.5);
+                // North snow
+                painter.paintBrush(0.50, 0.14, 0.22, [0.85, 0.90, 0.95], 0.9);
+                painter.paintBrush(0.40, 0.16, 0.12, [0.80, 0.86, 0.92], 0.75);
+                painter.paintBrush(0.60, 0.16, 0.12, [0.80, 0.86, 0.92], 0.75);
+                painter.paintBrush(0.50, 0.20, 0.05, [0.25, 0.28, 0.32], 0.85); // crevice dark
+
+                painter.applyToMesh(terrain.mesh);
+                statusEl.textContent = 'Terrain painted — biomes blended';
+            }
+        } catch (e) { console.warn('PaintTerrainV3 failed', e); }
+
+
+        // Chromac terminal removed — north is snow mountains
 
         // V3 structure — platforms + pillars across the zone
         const S = RoomBuilderV3.shape;
@@ -243,10 +285,6 @@
             S({ id: 'center_pad', layer: 'L3', geo: 'Cube',
                 scale: {x: 90, y: 6, z: 90}, sizeZ: 90,
                 position: {x: 0, y: 3, z: 0}, color: '#0a1f14', alpha: 0.65, solid: true }),
-            // North approach pad under terminal
-            S({ id: 'north_pad', layer: 'L3', geo: 'Cube',
-                scale: {x: 70, y: 5, z: 50}, sizeZ: 50,
-                position: {x: 0, y: 2, z: -ZONE_L * 0.28}, color: '#0a1810', solid: true }),
             // Corner pillars (inset from zone edges)
             S({ id: 'p_ne', layer: 'L2', geo: 'VCylinder',
                 scale: {x: 18, y: 80, z: 18}, sizeZ: 18,
@@ -272,8 +310,162 @@
             layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
         });
 
-        // ---- Overworld props (MAIN map: central Forest / room1) ----
-        function addProp(path, x, z, w, h) {
+        // ============================================================
+        // MERGED WEST SECTOR (was road_1) — Lost Woods + Tomb + Arcade house
+        // Coordinates in western third of expanded ZONE_W
+        // ============================================================
+        const TOMB_X = -1550, TOMB_Z = -200;
+        const HOUSE_X = -1100, HOUSE_Z = -350;
+        const westShapes = [
+            // ---- Daggerfall tomb ----
+            S({ id: 'tomb_wall_n', layer: 'L2', geo: 'Cube',
+                scale: { x: 280, y: 90, z: 22 }, sizeZ: 22,
+                position: { x: TOMB_X, y: 48, z: TOMB_Z - 180 }, color: '#2a2c30', solid: true }),
+            S({ id: 'tomb_wall_w', layer: 'L2', geo: 'Cube',
+                scale: { x: 22, y: 90, z: 220 }, sizeZ: 220,
+                position: { x: TOMB_X - 140, y: 48, z: TOMB_Z - 60 }, color: '#26282c', solid: true }),
+            S({ id: 'tomb_wall_e', layer: 'L2', geo: 'Cube',
+                scale: { x: 22, y: 90, z: 220 }, sizeZ: 220,
+                position: { x: TOMB_X + 140, y: 48, z: TOMB_Z - 60 }, color: '#26282c', solid: true }),
+            S({ id: 'tomb_wall_s_l', layer: 'L2', geo: 'Cube',
+                scale: { x: 100, y: 90, z: 22 }, sizeZ: 22,
+                position: { x: TOMB_X - 90, y: 48, z: TOMB_Z + 60 }, color: '#2a2c30', solid: true }),
+            S({ id: 'tomb_wall_s_r', layer: 'L2', geo: 'Cube',
+                scale: { x: 100, y: 90, z: 22 }, sizeZ: 22,
+                position: { x: TOMB_X + 90, y: 48, z: TOMB_Z + 60 }, color: '#2a2c30', solid: true }),
+            S({ id: 'tomb_gate_l', layer: 'L2', geo: 'Cube',
+                scale: { x: 16, y: 100, z: 20 }, sizeZ: 20,
+                position: { x: TOMB_X - 55, y: 52, z: TOMB_Z + 60 }, color: '#3a3c42', solid: true }),
+            S({ id: 'tomb_gate_r', layer: 'L2', geo: 'Cube',
+                scale: { x: 16, y: 100, z: 20 }, sizeZ: 20,
+                position: { x: TOMB_X + 55, y: 52, z: TOMB_Z + 60 }, color: '#3a3c42', solid: true }),
+            S({ id: 'tomb_gate_top', layer: 'L2', geo: 'Cube',
+                scale: { x: 110, y: 20, z: 20 }, sizeZ: 20,
+                position: { x: TOMB_X, y: 110, z: TOMB_Z + 60 }, color: '#444850', solid: false }),
+            S({ id: 'tomb_keep', layer: 'L2', geo: 'Cube',
+                scale: { x: 120, y: 110, z: 80 }, sizeZ: 80,
+                position: { x: TOMB_X, y: 58, z: TOMB_Z - 80 }, color: '#1e2024', solid: true }),
+            S({ id: 'tomb_roof', layer: 'L3', geo: 'Cube',
+                scale: { x: 100, y: 28, z: 80 }, sizeZ: 80,
+                position: { x: TOMB_X, y: 128, z: TOMB_Z - 60 }, color: '#2e3038', solid: false }),
+            S({ id: 'tomb_spire', layer: 'L3', geo: 'Cube',
+                scale: { x: 24, y: 50, z: 24 }, sizeZ: 24,
+                position: { x: TOMB_X, y: 165, z: TOMB_Z - 60 }, color: '#3a3c44', solid: false }),
+            S({ id: 'tomb_step1', layer: 'L1', geo: 'Cube',
+                scale: { x: 70, y: 8, z: 20 }, sizeZ: 20,
+                position: { x: TOMB_X, y: 6, z: TOMB_Z + 20 }, color: '#303238', solid: false }),
+            S({ id: 'tomb_step2', layer: 'L1', geo: 'Cube',
+                scale: { x: 60, y: 8, z: 18 }, sizeZ: 18,
+                position: { x: TOMB_X, y: 12, z: TOMB_Z }, color: '#34363c', solid: false }),
+            S({ id: 'tomb_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 28, y: 44, z: 6 }, sizeZ: 6,
+                position: { x: TOMB_X, y: 40, z: TOMB_Z + 10 }, color: '#224422', solid: false }),
+            // ---- Arcade house ----
+            S({ id: 'h_floor', layer: 'L1', geo: 'Cube',
+                scale: { x: 140, y: 8, z: 110 }, sizeZ: 110,
+                position: { x: HOUSE_X, y: 4, z: HOUSE_Z }, color: '#1a1814', solid: true }),
+            S({ id: 'h_back', layer: 'L2', geo: 'Cube',
+                scale: { x: 140, y: 70, z: 12 }, sizeZ: 12,
+                position: { x: HOUSE_X, y: 40, z: HOUSE_Z - 55 }, color: '#3a342c', solid: true }),
+            S({ id: 'h_left', layer: 'L2', geo: 'Cube',
+                scale: { x: 12, y: 70, z: 110 }, sizeZ: 110,
+                position: { x: HOUSE_X - 70, y: 40, z: HOUSE_Z }, color: '#322e28', solid: true }),
+            S({ id: 'h_right', layer: 'L2', geo: 'Cube',
+                scale: { x: 12, y: 70, z: 110 }, sizeZ: 110,
+                position: { x: HOUSE_X + 70, y: 40, z: HOUSE_Z }, color: '#322e28', solid: true }),
+            S({ id: 'h_front_l', layer: 'L2', geo: 'Cube',
+                scale: { x: 48, y: 70, z: 12 }, sizeZ: 12,
+                position: { x: HOUSE_X - 46, y: 40, z: HOUSE_Z + 55 }, color: '#3a342c', solid: true }),
+            S({ id: 'h_front_r', layer: 'L2', geo: 'Cube',
+                scale: { x: 48, y: 70, z: 12 }, sizeZ: 12,
+                position: { x: HOUSE_X + 46, y: 40, z: HOUSE_Z + 55 }, color: '#3a342c', solid: true }),
+            S({ id: 'h_door_top', layer: 'L2', geo: 'Cube',
+                scale: { x: 44, y: 14, z: 12 }, sizeZ: 12,
+                position: { x: HOUSE_X, y: 68, z: HOUSE_Z + 55 }, color: '#2a2620', solid: true }),
+            S({ id: 'h_sign', layer: 'L4', geo: 'Cube',
+                scale: { x: 56, y: 16, z: 6 }, sizeZ: 6,
+                position: { x: HOUSE_X, y: 88, z: HOUSE_Z + 58 }, color: '#ff44cc', solid: false }),
+            S({ id: 'h_win_l', layer: 'L3', geo: 'Cube',
+                scale: { x: 22, y: 22, z: 4 }, sizeZ: 4,
+                position: { x: HOUSE_X - 46, y: 42, z: HOUSE_Z + 62 }, color: '#88ccff', solid: false }),
+            S({ id: 'h_win_r', layer: 'L3', geo: 'Cube',
+                scale: { x: 22, y: 22, z: 4 }, sizeZ: 4,
+                position: { x: HOUSE_X + 46, y: 42, z: HOUSE_Z + 62 }, color: '#88ccff', solid: false }),
+        ];
+        const westRoom = RoomBuilderV3.build(scene, westShapes, {
+            layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+        });
+        // Merge solid boxes into main room for collision
+        if (westRoom.solidBoxes && room.solidBoxes) {
+            const filtered = westRoom.solidBoxes.filter(function (b) {
+                const w = b.maxX - b.minX, d = b.maxZ - b.minZ;
+                // roofs / flat pads
+                if (w > 150 && d > 150) return false;
+                return true;
+            });
+            room.solidBoxes = room.solidBoxes.concat(filtered);
+        }
+        window._westRoom = westRoom;
+
+        // ============================================================
+        // NORTH — snowy mountains + crevice (geometry)
+        // ============================================================
+        const MX = 0, MZ = -ZONE_L * 0.38;
+        const mountainShapes = [
+            // West peak mass
+            S({ id: 'mt_w1', layer: 'L2', geo: 'Cube',
+                scale: { x: 220, y: 180, z: 160 }, sizeZ: 160,
+                position: { x: -280, y: 90, z: MZ }, color: '#d8e4f0', solid: true }),
+            S({ id: 'mt_w2', layer: 'L2', geo: 'Cube',
+                scale: { x: 160, y: 240, z: 120 }, sizeZ: 120,
+                position: { x: -420, y: 120, z: MZ - 80 }, color: '#c8d8e8', solid: true }),
+            // East peak mass
+            S({ id: 'mt_e1', layer: 'L2', geo: 'Cube',
+                scale: { x: 240, y: 200, z: 150 }, sizeZ: 150,
+                position: { x: 300, y: 100, z: MZ - 40 }, color: '#d0e0f0', solid: true }),
+            S({ id: 'mt_e2', layer: 'L2', geo: 'Cube',
+                scale: { x: 140, y: 260, z: 110 }, sizeZ: 110,
+                position: { x: 480, y: 130, z: MZ - 100 }, color: '#b8cce0', solid: true }),
+            // Center ridge left of crevice
+            S({ id: 'mt_cl', layer: 'L2', geo: 'Cube',
+                scale: { x: 100, y: 140, z: 180 }, sizeZ: 180,
+                position: { x: -70, y: 70, z: MZ + 20 }, color: '#e0ecf5', solid: true }),
+            // Center ridge right of crevice
+            S({ id: 'mt_cr', layer: 'L2', geo: 'Cube',
+                scale: { x: 100, y: 140, z: 180 }, sizeZ: 180,
+                position: { x: 70, y: 70, z: MZ + 20 }, color: '#e0ecf5', solid: true }),
+            // Crevice walls (narrow gap between ridges)
+            S({ id: 'crev_l', layer: 'L2', geo: 'Cube',
+                scale: { x: 18, y: 100, z: 200 }, sizeZ: 200,
+                position: { x: -28, y: 50, z: MZ + 40 }, color: '#3a4550', solid: true }),
+            S({ id: 'crev_r', layer: 'L2', geo: 'Cube',
+                scale: { x: 18, y: 100, z: 200 }, sizeZ: 200,
+                position: { x: 28, y: 50, z: MZ + 40 }, color: '#3a4550', solid: true }),
+            // Snow caps (lighter, non-solid decoration on peaks)
+            S({ id: 'cap_w', layer: 'L3', geo: 'Cube',
+                scale: { x: 120, y: 30, z: 90 }, sizeZ: 90,
+                position: { x: -420, y: 250, z: MZ - 80 }, color: '#f5f8ff', solid: false }),
+            S({ id: 'cap_e', layer: 'L3', geo: 'Cube',
+                scale: { x: 100, y: 28, z: 80 }, sizeZ: 80,
+                position: { x: 480, y: 270, z: MZ - 100 }, color: '#f5f8ff', solid: false }),
+            S({ id: 'cap_c', layer: 'L3', geo: 'Cube',
+                scale: { x: 80, y: 22, z: 100 }, sizeZ: 100,
+                position: { x: 0, y: 150, z: MZ }, color: '#eef4ff', solid: false }),
+        ];
+        const northRoom = RoomBuilderV3.build(scene, mountainShapes, {
+            layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+        });
+        if (northRoom.solidBoxes && room.solidBoxes) {
+            room.solidBoxes = room.solidBoxes.concat(northRoom.solidBoxes);
+        }
+        window._northRoom = northRoom;
+
+        // ---- Overworld props (forest + ground-snapped) ----
+        const overworldProps = [];
+        const treeColliders = []; // {x,z,r} trunk blockers
+
+        function addProp(path, x, z, w, h, opts) {
+            opts = opts || {};
             const mat = new THREE.MeshBasicMaterial({
                 map: prep(loader.load(path)),
                 transparent: true,
@@ -281,68 +473,379 @@
                 depthWrite: true
             });
             const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-            mesh.position.set(x, RoomBuilderV3.FLOOR_Y + h * 0.45, z);
+            // Snap feet to terrain — prevent floating / sinking
+            const groundY = terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y;
+            mesh.position.set(x, groundY + h * 0.45, z);
             mesh.userData.isProp = true;
+            mesh.userData.propH = h;
+            mesh.userData.baseX = x;
+            mesh.userData.baseZ = z;
             scene.add(mesh);
+            overworldProps.push(mesh);
+            if (opts.collide) {
+                treeColliders.push({ x: x, z: z, r: opts.radius || 14 });
+            }
             return mesh;
         }
-        const overworldProps = [];
-        // Trees — south forest belt (MAIN map lower FOREST)
-        const treeSpots = [
-            [-400, 800], [-200, 900], [100, 850], [350, 950],
-            [-600, 500], [500, 550], [-300, 1200], [250, 1300],
-            [-700, 200], [650, 250], [-250, -300], [400, -400],
-            [-500, -800], [200, -900], [0, 600], [-100, -200],
-            [700, 0], [-800, 0], [100, 1500], [-150, 1600]
+
+        // Dense south forest + west woods + sparse north
+        function scatterForest(cx, cz, count, spreadX, spreadZ) {
+            for (let i = 0; i < count; i++) {
+                const x = cx + (Math.random() - 0.5) * spreadX;
+                const z = cz + (Math.random() - 0.5) * spreadZ;
+                // Keep clear of hillside start shelf and terminal
+                if (Math.hypot(x + 320, z - 80) < 120) continue;
+                if (Math.abs(x) < 90 && z < -ZONE_L * 0.22 && z > -ZONE_L * 0.34) continue;
+                const s = 0.85 + Math.random() * 0.45;
+                addProp('assets/overworld/TREE1-1.png', x, z, 46 * s, 54 * s, { collide: true, radius: 12 + s * 4 });
+            }
+        }
+        scatterForest(0, 1100, 48, 1600, 1100);
+        scatterForest(-700, 200, 22, 700, 800);
+        scatterForest(650, 400, 12, 550, 700);
+        scatterForest(-200, -600, 8, 500, 500);
+        scatterForest(300, -700, 8, 500, 500);
+        // Merged Lost Woods density (west half)
+        scatterForest(-1400, 100, 55, 1000, 1400);
+        scatterForest(-1600, -400, 28, 800, 800);
+        scatterForest(-1200, 600, 28, 700, 700);
+
+        const boulderSpots = [
+            [-400, -700], [500, -600], [-150, 400], [300, 200], [-600, -200],
+            [-280, 160], [-360, 40], [180, 700], [-500, 900], [420, -200]
         ];
-        treeSpots.forEach(([x, z]) => {
-            overworldProps.push(addProp('assets/overworld/TREE1-1.png', x, z, 48, 56));
-        });
-        // Boulders
-        [[-400, -700], [500, -600], [-150, 400], [300, 200], [-600, -200]].forEach(([x, z]) => {
-            overworldProps.push(addProp('assets/overworld/BOULDER-1.png', x, z, 36, 32));
+        boulderSpots.forEach(function (p) {
+            const s = 0.9 + Math.random() * 0.3;
+            addProp('assets/overworld/BOULDER-1.png', p[0], p[1], 34 * s, 30 * s, { collide: true, radius: 16 });
         });
 
+        // Gravestones in graveyard (around tomb)
+        function addGravestone(x, z) {
+            const gy = terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y;
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 22, 4),
+                new THREE.MeshBasicMaterial({ color: 0x6a6a72 })
+            );
+            body.position.set(x, gy + 12, z);
+            scene.add(body);
+            const top = new THREE.Mesh(
+                new THREE.BoxGeometry(12, 6, 4),
+                new THREE.MeshBasicMaterial({ color: 0x7a7a82 })
+            );
+            top.position.set(x, gy + 24, z);
+            scene.add(top);
+            treeColliders.push({ x: x, z: z, r: 10 });
+        }
+        const graveSpots = [
+            [-1480, -100], [-1520, -60], [-1600, -90], [-1620, -160],
+            [-1500, -280], [-1420, -240], [-1680, -200], [-1580, -40],
+            [-1450, -180], [-1650, -120], [-1550, -300], [-1400, -140],
+            [-1700, -250], [-1480, -220], [-1620, -280]
+        ];
+        graveSpots.forEach(function (g) { addGravestone(g[0], g[1]); });
+
+        // ---- Dirt roads + warp signs ----
+        function makeRoadStrip(x0, z0, x1, z1, width) {
+            width = width || 48;
+            const dx = x1 - x0, dz = z1 - z0;
+            const len = Math.hypot(dx, dz) || 1;
+            const segs = Math.max(3, Math.floor(len / 90));
+            for (let i = 0; i <= segs; i++) {
+                const t = i / segs;
+                const x = x0 + dx * t;
+                const z = z0 + dz * t;
+                const gy = terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y;
+                const strip = new THREE.Mesh(
+                    new THREE.PlaneGeometry(width, Math.min(100, len / segs + 20)),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x5a4a32,
+                        transparent: true,
+                        opacity: 0.55,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    })
+                );
+                strip.rotation.x = -Math.PI / 2;
+                // orient along path
+                strip.rotation.z = Math.atan2(dx, dz);
+                strip.position.set(x, gy + 0.6, z);
+                strip.userData.isRoad = true;
+                scene.add(strip);
+                overworldProps.push(strip); // not billboarded the same way — skip lookAt later
+            }
+        }
+
+        function makeSign(text, x, z, color) {
+            const c = document.createElement('canvas');
+            c.width = 320; c.height = 80;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#0a120a';
+            ctx.fillRect(0, 0, 320, 80);
+            ctx.strokeStyle = color || '#00ff66';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(3, 3, 314, 74);
+            ctx.fillStyle = color || '#00ff66';
+            ctx.font = 'bold 22px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const lines = text.split('\n');
+            lines.forEach(function (line, i) {
+                ctx.fillText(line, 160, 40 - (lines.length - 1) * 12 + i * 24);
+            });
+            const tex = new THREE.CanvasTexture(c);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false
+            });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(90, 24), mat);
+            const gy = terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y;
+            mesh.position.set(x, gy + 42, z);
+            mesh.userData.isProp = true;
+            mesh.userData.propH = 24;
+            mesh.userData.baseX = x;
+            mesh.userData.baseZ = z;
+            mesh.userData.isSign = true;
+            scene.add(mesh);
+            overworldProps.push(mesh);
+            // post
+            const post = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 36, 3),
+                new THREE.MeshBasicMaterial({ color: 0x3a2a18 })
+            );
+            post.position.set(x, gy + 18, z);
+            scene.add(post);
+            return mesh;
+        }
+
+        // Roads from hillside start toward edges
+        const START_X = -240, START_Z = 220;
+        makeRoadStrip(START_X, START_Z, 0, -ZONE_L * 0.32, 52);           // north toward crevice
+        makeRoadStrip(START_X, START_Z, -1100, -100, 48);            // west into woods
+        makeRoadStrip(-1100, -100, -1550, -150, 44);                       // woods to tomb
+        makeRoadStrip(-1100, -100, -1100, -300, 40);                       // to arcade house
+        makeRoadStrip(START_X, START_Z, ZONE_W * 0.42, 0, 44);             // east Lake approach
+        makeRoadStrip(START_X, START_Z, 0, ZONE_L * 0.42, 48);             // south forest/beach
+        makeRoadStrip(200, 800, ZONE_W * 0.38, ZONE_L * 0.38, 40);         // SE lake
+        makeRoadStrip(-200, 800, -ZONE_W * 0.38, ZONE_L * 0.38, 40);       // SW desert
+
+        // Directional signs near edge approaches
+        makeSign('WEST\nLOST WOODS', -ZONE_W * 0.40, 40, '#00ff66');
+        makeSign('EAST\nLAKE ROAD', ZONE_W * 0.40, 40, '#66ccff');
+        makeSign('NORTH\nSNOW / FACTORY', 0, -ZONE_L * 0.40, '#aaccff');
+        makeSign('SOUTH\nFOREST EDGE', 0, ZONE_L * 0.40, '#88ff88');
+        makeSign('SE\nLAKE D4', ZONE_W * 0.36, ZONE_L * 0.36, '#44aadd');
+        makeSign('SW\nDESERT', -ZONE_W * 0.36, ZONE_L * 0.36, '#ddaa44');
+        makeSign('CAVE\nBEGINNING', -320, 60, '#88ccff');
+        makeSign('← HUB CENTER', -100, 180, '#00ff66');
+
+        // ---- Fake distant LOD (horizon silhouettes) ----
+        // Soft cards beyond playable soft-bounds so edges never look hard-cut
+        const lodGroup = new THREE.Group();
+        lodGroup.name = 'lod-horizon';
+        function addLodCard(x, z, w, h, color, opacity) {
+            const mat = new THREE.MeshBasicMaterial({
+                color: color || 0x1a2a1a,
+                transparent: true,
+                opacity: opacity != null ? opacity : 0.55,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                fog: true
+            });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            const gy = terrain ? terrain.getHeight(
+                Math.max(-ZONE_W * 0.45, Math.min(ZONE_W * 0.45, x * 0.5)),
+                Math.max(-ZONE_L * 0.45, Math.min(ZONE_L * 0.45, z * 0.5))
+            ) : RoomBuilderV3.FLOOR_Y;
+            mesh.position.set(x, gy + h * 0.35, z);
+            mesh.userData.isLod = true;
+            lodGroup.add(mesh);
+            return mesh;
+        }
+        // Ring of distant hills / forest mass
+        const lodR = Math.max(ZONE_L, ZONE_W) * 0.62;
+        for (let i = 0; i < 16; i++) {
+            const ang = (i / 16) * Math.PI * 2;
+            const x = Math.sin(ang) * lodR;
+            const z = Math.cos(ang) * lodR;
+            const w = 280 + (i % 3) * 80;
+            const h = 90 + (i % 4) * 35;
+            const col = (i % 2 === 0) ? 0x142818 : 0x1a2230;
+            addLodCard(x, z, w, h, col, 0.45);
+        }
+        // Extra far haze planes
+        for (let i = 0; i < 8; i++) {
+            const ang = (i / 8) * Math.PI * 2 + 0.2;
+            const x = Math.sin(ang) * lodR * 1.15;
+            const z = Math.cos(ang) * lodR * 1.15;
+            addLodCard(x, z, 400, 140, 0x0c1418, 0.28);
+        }
+        scene.add(lodGroup);
 
         // ---- Beginning Cave entrance (LoZ-style start, near center slime) ----
         // Simple cave mouth: dark recess + stone frame cubes
         (function placeCaveMouth() {
-            const S = RoomBuilderV3.shape;
-            const caveShapes = [
+            // Hollow rock cave — starter area (replaces beginning.html)
+            const RX = -320, RZ = 100;
+            const gy = terrain ? terrain.getHeight(RX, RZ) : RoomBuilderV3.FLOOR_Y;
+            const yOff = gy - RoomBuilderV3.FLOOR_Y;
+            const rockShapes = [
+                // Back wall only (XZ-thin so it does not seal the room in 2D collision)
+                S({ id: 'cave_back', layer: 'L2', geo: 'Cube',
+                    scale: { x: 100, y: 90, z: 14 }, sizeZ: 14,
+                    position: { x: RX, y: 45 + yOff, z: RZ - 45 }, color: '#3a3a38', solid: true }),
+                // Left / right walls — stop short of the mouth (z < RZ+25)
                 S({ id: 'cave_l', layer: 'L2', geo: 'Cube',
-                    scale: {x: 18, y: 55, z: 22}, sizeZ: 22,
-                    position: {x: -28, y: 28, z: 30}, color: '#2a2a28', solid: true }),
+                    scale: { x: 14, y: 90, z: 70 }, sizeZ: 70,
+                    position: { x: RX - 55, y: 45 + yOff, z: RZ - 10 }, color: '#353532', solid: true }),
                 S({ id: 'cave_r', layer: 'L2', geo: 'Cube',
-                    scale: {x: 18, y: 55, z: 22}, sizeZ: 22,
-                    position: {x: 28, y: 28, z: 30}, color: '#2a2a28', solid: true }),
-                S({ id: 'cave_top', layer: 'L2', geo: 'Cube',
-                    scale: {x: 74, y: 16, z: 24}, sizeZ: 24,
-                    position: {x: 0, y: 58, z: 30}, color: '#333330', solid: true }),
+                    scale: { x: 14, y: 90, z: 70 }, sizeZ: 70,
+                    position: { x: RX + 55, y: 45 + yOff, z: RZ - 10 }, color: '#353532', solid: true }),
+                // Ceiling / top — NOT solid (2D AABB would block whole cave footprint)
+                S({ id: 'cave_ceil', layer: 'L3', geo: 'Cube',
+                    scale: { x: 120, y: 16, z: 100 }, sizeZ: 100,
+                    position: { x: RX, y: 95 + yOff, z: RZ }, color: '#2e2e2c', solid: false }),
+                S({ id: 'rock_outer_l', layer: 'L2', geo: 'Cube',
+                    scale: { x: 36, y: 100, z: 55 }, sizeZ: 55,
+                    position: { x: RX - 90, y: 50 + yOff, z: RZ }, color: '#4a4a48', solid: true }),
+                S({ id: 'rock_outer_r', layer: 'L2', geo: 'Cube',
+                    scale: { x: 36, y: 100, z: 55 }, sizeZ: 55,
+                    position: { x: RX + 90, y: 50 + yOff, z: RZ }, color: '#4a4a48', solid: true }),
+                S({ id: 'rock_top', layer: 'L3', geo: 'Cube',
+                    scale: { x: 90, y: 32, z: 70 }, sizeZ: 70,
+                    position: { x: RX, y: 115 + yOff, z: RZ - 10 }, color: '#555552', solid: false }),
+                // Front pillars — wide mouth gap (~70 units) in the middle
+                S({ id: 'cave_fl', layer: 'L2', geo: 'Cube',
+                    scale: { x: 28, y: 90, z: 14 }, sizeZ: 14,
+                    position: { x: RX - 50, y: 45 + yOff, z: RZ + 52 }, color: '#3a3a38', solid: true }),
+                S({ id: 'cave_fr', layer: 'L2', geo: 'Cube',
+                    scale: { x: 28, y: 90, z: 14 }, sizeZ: 14,
+                    position: { x: RX + 50, y: 45 + yOff, z: RZ + 52 }, color: '#3a3a38', solid: true }),
+                // Lintel visual only
+                S({ id: 'cave_lintel', layer: 'L2', geo: 'Cube',
+                    scale: { x: 56, y: 18, z: 14 }, sizeZ: 14,
+                    position: { x: RX, y: 88 + yOff, z: RZ + 52 }, color: '#2a2a28', solid: false }),
             ];
-            // merge into main room solid boxes by building into same scene
-            const caveRoom = RoomBuilderV3.build(scene, caveShapes, {
+            const caveRoom = RoomBuilderV3.build(scene, rockShapes, {
                 layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
             });
-            // keep reference for clamp if needed
+            if (caveRoom.solidBoxes && room.solidBoxes) {
+                // Drop flat/ceiling-like solids (large XZ, used as roofs) — they block 2D walk
+                const filtered = caveRoom.solidBoxes.filter(function (b) {
+                    const w = (b.maxX - b.minX);
+                    const d = (b.maxZ - b.minZ);
+                    // reject near-square large pads over the cave mouth corridor
+                    if (w > 90 && d > 90) return false;
+                    return true;
+                });
+                room.solidBoxes = room.solidBoxes.concat(filtered);
+            }
             window._caveRoom = caveRoom;
-            // Dark mouth plane
-            const mouth = new THREE.Mesh(
-                new THREE.PlaneGeometry(42, 48),
-                new THREE.MeshBasicMaterial({ color: 0x050508, side: THREE.DoubleSide })
+            // Clear prop trunk colliders that landed in the mouth
+            for (let i = treeColliders.length - 1; i >= 0; i--) {
+                const tc = treeColliders[i];
+                if (Math.hypot(tc.x - RX, tc.z - RZ) < 100) treeColliders.splice(i, 1);
+            }
+
+            // Floor pad inside (visual)
+            const floorPad = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 90),
+                new THREE.MeshBasicMaterial({ color: 0x1a1814, side: THREE.DoubleSide })
             );
-            mouth.position.set(0, RoomBuilderV3.FLOOR_Y + 28, 18);
-            scene.add(mouth);
-            window._caveMouth = mouth;
+            floorPad.rotation.x = -Math.PI / 2;
+            floorPad.position.set(RX, gy + 0.5, RZ);
+            scene.add(floorPad);
+
+            // Old man NPC
+            const npcMat = new THREE.MeshBasicMaterial({
+                map: prep(loader.load('assets/npc/OLDMAN1-1.png')),
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: true
+            });
+            const npc = new THREE.Mesh(new THREE.PlaneGeometry(36, 44), npcMat);
+            npc.position.set(RX, gy + 24, RZ - 20);
+            npc.userData.isProp = true;
+            npc.userData.propH = 44;
+            npc.userData.baseX = RX;
+            npc.userData.baseZ = RZ - 20;
+            scene.add(npc);
+            overworldProps.push(npc);
+            window._oldMan = npc;
+
+            // "I AM ERROR" board above old man
+            (function () {
+                const c = document.createElement('canvas');
+                c.width = 256; c.height = 64;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, 256, 64);
+                ctx.strokeStyle = '#00ff66';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(2, 2, 252, 60);
+                ctx.fillStyle = '#00ff66';
+                ctx.font = 'bold 26px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('I AM ERROR', 128, 32);
+                const tex = new THREE.CanvasTexture(c);
+                tex.magFilter = THREE.NearestFilter;
+                const sign = new THREE.Mesh(
+                    new THREE.PlaneGeometry(60, 16),
+                    new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+                );
+                sign.position.set(RX, gy + 52, RZ - 20);
+                sign.userData.isProp = true;
+                sign.userData.propH = 16;
+                sign.userData.baseX = RX;
+                sign.userData.baseZ = RZ - 20;
+                scene.add(sign);
+                overworldProps.push(sign);
+                window._errorSign = sign;
+            })();
+
+            // Wood sword pickup on the ground
+            const swordMat = new THREE.MeshBasicMaterial({
+                map: prep(loader.load('assets/inventory/WOODSWORD-1.png')),
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const swordMesh = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), swordMat);
+            swordMesh.position.set(RX + 30, gy + 14, RZ + 10);
+            swordMesh.userData.isPickup = true;
+            swordMesh.userData.itemId = 'woodsword';
+            scene.add(swordMesh);
+            window._swordPickup = swordMesh;
+            window._swordTaken = false;
         })();
 
         // Player sprite -- owned by SpriteSystemV3 now (directional frames,
         // animation timing, and billboard-facing all live in the module;
         // index.html just tells it where to be and which way it's facing).
         const player = SpriteSystemV3.createPlayer(loader, {
-            position: { x: 0, y: 0, z: -ZONE_L * 0.22 },
+            position: { x: -240, y: 0, z: 220 },
             layer: 'L3'
         });
         scene.add(player.mesh);
+
+        // Orbit / drag / zoom camera (same as south_sector)
+        const camCtrl = CameraControlsV3.create(camera, renderer.domElement, {
+            distance: 200,
+            height: 95,
+            minDistance: 100,
+            maxDistance: 420
+        });
+        const optionsMenu = (typeof OptionsMenuV3 !== 'undefined')
+            ? OptionsMenuV3.create({
+                camera: camera,
+                camCtrl: camCtrl,
+                player: player,
+                defaultFov: 55,
+                onPauseChange: function (paused) {
+                    isOverlayOpen = paused; // freeze movement
+                }
+            })
+            : null;
 
         // Enemy system -- same deal, each enemy is a SpriteSystemV3 sprite
         // instead of a hand-built mesh/material pair.
@@ -361,45 +864,118 @@
                 position: { x: posX, y: 0, z: posZ },
                 layer: 'L3'
             });
+            if (terrain) {
+                enemy.mesh.position.y = terrain.getHeight(posX, posZ) + 22;
+            }
             scene.add(enemy.mesh);
             activeEnemies.push(enemy);
-            // randomizer panel removed
         };
 // Default slime
-        window.spawnEnemy('assets/enemies/SLIME-1-0.png', 0, -40);
+        // default slime removed — rock entrance replaces landmark
 
-        // Zelda II homage — textboard above the slime
-        (function placeErrorSign() {
-            const c = document.createElement('canvas');
-            c.width = 256; c.height = 64;
-            const ctx = c.getContext('2d');
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 256, 64);
-            ctx.strokeStyle = '#00ff66';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(2, 2, 252, 60);
-            ctx.fillStyle = '#00ff66';
-            ctx.font = 'bold 28px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('I AM ERROR', 128, 32);
-            const tex = new THREE.CanvasTexture(c);
-            tex.magFilter = THREE.NearestFilter;
-            tex.minFilter = THREE.NearestFilter;
-            const mat = new THREE.MeshBasicMaterial({
-                map: tex, transparent: true, side: THREE.DoubleSide
-            });
-            const sign = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), mat);
-            // Above slime at (0, -40)
-            sign.position.set(0, RoomBuilderV3.FLOOR_Y + 55, -40);
-            sign.userData.isProp = true;
-            scene.add(sign);
-            if (typeof overworldProps !== 'undefined') overworldProps.push(sign);
-            else {
-                // face camera in animate via dedicated ref
-                window._errorSign = sign;
+
+        // OOT-style night field spawns (vanish by day)
+        const nightSpawn = NightSpawnV3.create({
+            scene: scene,
+            loader: loader,
+            player: player,
+            enemyPaths: [
+                'assets/enemies/SLIME-1-0.png',
+                'assets/enemies/GHOSTHARDL.png',
+                'assets/enemies/GHOSTHARDR.png',
+                'assets/enemies/NEONSKULL-1.png',
+                'assets/enemies/BOOEY-1-0.png'
+            ],
+            getHour: function () { return sky.getHour(); },
+            getHeight: function (x, z) {
+                return terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y;
+            },
+            maxAlive: 7,
+            spawnInterval: 4.0,
+            radiusMin: 200,
+            radiusMax: 480
+        });
+
+        // ---- HP bars + inventory (lantern / ocarina / sword) ----
+        const hpBars = HpBarSystemV3.create(scene, loader);
+        hpBars.attach(player.mesh, { type: 'player', max: 6, current: 6, offsetY: 52 });
+        // playerState applied after both inv + hp exist (see below)
+
+
+        // Lantern point light follows player
+        const lanternLight = new THREE.PointLight(0xffcc66, 0, 280, 2);
+        lanternLight.position.set(0, 30, 0);
+        player.mesh.add(lanternLight);
+
+        const inventory = InventorySystemV3.create({
+            lanternLight: lanternLight,
+            starter: [],  // sword/lantern/ocarina are world pickups now
+            onSong: function (songId) {
+                // Placeholder tone — real ocarina songs later
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const notes = [523.25, 587.33, 659.25, 783.99];
+                    notes.forEach(function (freq, i) {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.value = freq;
+                        g.gain.value = 0.08;
+                        o.connect(g); g.connect(ctx.destination);
+                        o.start(ctx.currentTime + i * 0.18);
+                        o.stop(ctx.currentTime + i * 0.18 + 0.16);
+                    });
+                } catch (e) {}
+                statusEl.textContent = 'Ocarina: song played (' + songId + ')';
+            },
+            onLantern: function (on) {
+                statusEl.textContent = on ? 'Lantern ON' : 'Lantern OFF';
+            },
+            onUse: function (id, info) {
+                if (id === 'heart' && info.heal) {
+                    hpBars.heal(player.mesh, info.heal);
+                }
             }
-        })();
+        });
+        // no starting gear
+        const playerState = PlayerStateV3.load();
+        playerState.applyInventory(inventory);
+        if (typeof hpBars !== 'undefined') {
+            playerState.applyHp(hpBars, player.mesh);
+            try { hpBars.set(player.mesh, playerState.getHp()); } catch (e) {}
+        }
+        // Restore sword-taken flag for hollow rock
+        if (playerState.getFlag('sword_taken')) {
+            window._swordTaken = true;
+            if (window._swordPickup) {
+                try { scene.remove(window._swordPickup); } catch (e) {}
+            }
+        }
+
+
+        const collision = (typeof CollisionSystemV3 !== 'undefined')
+            ? CollisionSystemV3.create() : null;
+
+        // Keyboard: Q = use equipped, E = cycle tools, 1-3 quick equip
+        window.addEventListener('keydown', function (ev) {
+            if (ev.repeat) return;
+            const k = ev.key.toLowerCase();
+            if (k === 'q') inventory.use();
+            if (k === 'e') {
+                const tools = inventory.list().filter(function (id) {
+                    const d = InventorySystemV3.CATALOG[id];
+                    return d && (d.slot === 'tool' || d.slot === 'weapon');
+                });
+                if (!tools.length) return;
+                const cur = inventory.getEquipped();
+                const idx = Math.max(0, tools.indexOf(cur));
+                inventory.equip(tools[(idx + 1) % tools.length]);
+                statusEl.textContent = 'Equipped: ' + inventory.getEquipped();
+            }
+            if (k === '1') inventory.equip('woodsword');
+            if (k === '2') { inventory.equip('lantern'); inventory.use('lantern'); }
+            if (k === '3') { inventory.equip('musicnote'); inventory.use('musicnote'); }
+        });
 
         // Controls
         const keys = { w: false, a: false, s: false, d: false };
@@ -411,17 +987,7 @@
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = true;
 
-            if (k === 'f' || k === 'escape') {
-                if (isOverlayOpen) closeOverlay();
-                else checkScreenInteraction();
-            }
-
-            if (isOverlayOpen) {
-                if (e.key === '1') warpTo('road_1.html');
-                if (e.key === '2') warpTo('road_2.html');
-                if (e.key === '3') warpTo('secret_factory.html');
-                if (e.key === '4') warpTo('main_menu.html');
-            }
+            if (k === 'f' || k === 'k' || e.code === 'Enter') checkScreenInteraction();
         });
 
         window.addEventListener('keyup', (e) => {
@@ -448,100 +1014,219 @@
             player.setMoving(moving);
             player.update(); // advances the walk-cycle frame when moving
 
-            // CE1 terrain height snap
+            // CE1 terrain height snap + collision helper
             if (terrain) {
                 const halfH = (player.height || 45) * 0.5;
                 pos.y = terrain.getHeight(pos.x, pos.z) + halfH;
             }
+            // Skip building clamp near entrances (2D solids still fight mouth/tomb gap)
+            const nearEntrance =
+                (Math.abs(pos.x + 320) < 90 && Math.abs(pos.z - 100) < 110) ||
+                (Math.abs(pos.x + 1550) < 100 && Math.abs(pos.z + 200) < 120);
+            if (!nearEntrance && typeof collision !== 'undefined' && collision && collision.update) {
+                collision.update({ player: player, enemies: activeEnemies, room: room, terrain: terrain });
+            } else if (terrain) {
+                const halfH = (player.height || 45) * 0.5;
+                pos.y = terrain.getHeight(pos.x, pos.z) + halfH;
+            }
 
-            // Beginning cave entrance (center, near slime)
-            if (Math.abs(pos.x) < 30 && pos.z > 5 && pos.z < 45) {
-                warpTo('beginning.html');
-                return;
+            // Hollow rock is in-hub — no beginning.html warp
+            // Tree / boulder trunk collision
+            for (let ti = 0; ti < treeColliders.length; ti++) {
+                const tc = treeColliders[ti];
+                // never block cave mouth or tomb gate
+                if (Math.hypot(tc.x + 320, tc.z - 100) < 110) continue;
+                if (Math.hypot(tc.x + 1550, tc.z + 200) < 130) continue;
+                const dx = pos.x - tc.x, dz = pos.z - tc.z;
+                const d = Math.hypot(dx, dz);
+                if (d < tc.r && d > 0.001) {
+                    const push = (tc.r - d) / d;
+                    pos.x += dx * push;
+                    pos.z += dz * push;
+                }
             }
 
             // Open Zone edge warps (W=2560 → ±1280, L=5000 → ±2500)
-            const halfW = 1280;
+            // Sector ownership (for other AIs):
+            //   WEST  → road_1 (Lost Woods / Tomb / D1) — Grok
+            //   NORTH → secret_factory (Snow / D3 Ice / Industrial D7-D8) — Grok
+            //   EAST  → road_2 (Lake approach) — CoPilot can extend to lake_sector
+            //   SE corner (x>900 & z>1800) → lake_sector.html (CoPilot / D4)
+            //   SW corner (x<-900 & z>1800) → desert_sector.html (Gemini)
+            //   SOUTH → south_sector.html (Forest edge / Beach)
+            const halfW = 2100; // ZONE_W/2 expanded west
             const halfL = 2500;
-            if (pos.x <= -halfW) { warpTo('road_1.html'); return; }       // WEST
-            if (pos.x >=  halfW) { warpTo('road_2.html'); return; }       // EAST
-            if (pos.z <= -halfL) { warpTo('secret_factory.html'); return; } // NORTH
-            if (pos.z >=  halfL) { warpTo('main_menu.html'); return; }    // SOUTH
+            // WEST merged into hub — soft bound only (no road_1 warp)
+            if (pos.x <= -halfW) { pos.x = -halfW + 2; }
+            if (pos.x >=  halfW) { warpTo('east_sector.html'); return; }        // EAST
+            if (pos.z <= -halfL) { warpTo('north_sector.html'); return; } // NORTH
+            if (pos.z >=  halfL) { warpTo('south_sector.html'); return; }  // SOUTH
 
-            camera.position.x = pos.x;
-            camera.position.y = pos.y + 90;
-            camera.position.z = pos.z + 220;
-            camera.lookAt(pos.x, pos.y + 15, pos.z - 50);
+            // CameraControlsV3: drag orbit + wheel zoom (south_sector pattern)
+            if (typeof camCtrl !== 'undefined' && camCtrl) {
+                camCtrl.update(pos);
+            } else {
+                camera.position.set(pos.x, pos.y + 95, pos.z + 220);
+                camera.lookAt(pos.x, pos.y + 15, pos.z - 40);
+            }
+            if (typeof optionsMenu !== 'undefined' && optionsMenu) {
+                optionsMenu.update(pos);
+            }
         }
 
-        function warpTo(url) { window.location.href = url; }
+        function warpTo(url) {
+            if (typeof playerState !== 'undefined' && typeof inventory !== 'undefined') {
+                const pos = player && player.position ? player.position : { x: 0, y: 0, z: 0 };
+                playerState.checkpoint(inventory, {
+                    hp: playerState.getHp(),
+                    maxHp: playerState.getMaxHp(),
+                    x: pos.x, y: pos.y, z: pos.z,
+                    room: url
+                });
+            }
+            window.location.href = url;
+        }
         window.warpTo = warpTo;
 
         function checkEnemyCollisions() {
-            if (isWarping || isOverlayOpen) return;
-            activeEnemies.forEach(enemy => {
-                if (player.position.distanceTo(enemy.position) < 35.0) {
-                    isWarping = true;
-                    openOverlay();
-                }
-            });
+            // reserved — combat can hook later
         }
 
         function checkScreenProximity() {
-            const dist = player.position.distanceTo(terminal.position);
-            if (dist < 180 && !isOverlayOpen) {
-                hudSub.innerHTML = '<span style="color:#ffff00;font-weight:bold;">[ PRESS \'F\' TO ACCESS STAGE SELECT ]</span>';
-            } else if (!isOverlayOpen) {
-                const nearCave = Math.abs(player.position.x) < 40 && player.position.z > 0 && player.position.z < 55;
-                if (nearCave) {
-                    hudSub.innerHTML = '<span style="color:#88ccff;">[ WALK INTO CAVE — BEGINNING ]</span>';
-                } else {
-                    hudSub.innerHTML = 'CONTROLS: WASD = MOVE | F = TERMINAL | CAVE = CENTER';
-                }
+            if (isOverlayOpen) return;
+            const nearCave = Math.abs(player.position.x - (-320)) < 55 && Math.abs(player.position.z - (140)) < 55;
+            if (nearCave && !window._swordTaken) {
+                hudSub.innerHTML = '<span style="color:#88ff88;">[ F — TAKE SWORD / TALK ]</span>';
+            } else if (nearCave) {
+                hudSub.innerHTML = '<span style="color:#88ccff;">[ HOLLOW ROCK — OLD MAN ]</span>';
+            } else if (Math.abs(player.position.x + 1550) < 80 && Math.abs(player.position.z + 190) < 80) {
+                hudSub.innerHTML = '<span style="color:#aa88ff;">[ F — ENTER THE TOMB / D1 ]</span>';
+            } else if (Math.abs(player.position.x + 1100) < 70 && Math.abs(player.position.z + 300) < 70) {
+                hudSub.innerHTML = '<span style="color:#ff66cc;">[ F — ENTER ARCADE 1 ]</span>';
+            } else if (Math.abs(player.position.x) < 80 && player.position.z < -ZONE_L * 0.28) {
+                hudSub.innerHTML = '<span style="color:#aaccff;">[ NORTH — SNOW CREVICE ]</span>';
+            } else {
+                hudSub.innerHTML = 'WASD move | ARROWS cam | K/A action | B attack | Q use | E cycle';
             }
         }
 
         function checkScreenInteraction() {
-            if (player.position.distanceTo(terminal.position) < 180) openOverlay();
-        }
+            const p = player.position;
+            // Sword pickup in hollow rock
+            if (!window._swordTaken && window._swordPickup &&
+                Math.abs(p.x - window._swordPickup.position.x) < 40 &&
+                Math.abs(p.z - window._swordPickup.position.z) < 40) {
+                inventory.give('woodsword');
+                inventory.equip('woodsword');
+                window._swordTaken = true;
+                scene.remove(window._swordPickup);
+                if (typeof playerState !== 'undefined') {
+                    playerState.setFlag('sword_taken', true);
+                    playerState.syncFromInventory(inventory);
+                    playerState.save();
+                }
+                statusEl.textContent = 'Picked up WOOD SWORD';
+                return;
+            }
+            // Talk to old man
+            if (window._oldMan &&
+                Math.abs(p.x - window._oldMan.position.x) < 45 &&
+                Math.abs(p.z - window._oldMan.position.z) < 45) {
+                statusEl.textContent = 'OLD MAN: It is dangerous to go alone! Take this.';
+                return;
+            }
+            // Tomb door → D1
+            if (Math.abs(p.x - (-1550)) < 70 && Math.abs(p.z - (-200)) < 80) {
+                warpTo('d_1.html'); return;
+            }
 
-        function openOverlay() {
-            isOverlayOpen = true;
-            document.getElementById('stage-select-overlay').style.display = 'flex';
-        }
+        function openOverlay() { /* stage menu removed */ }
 
-        function closeOverlay() {
-            isOverlayOpen = false;
-            isWarping = false;
-            document.getElementById('stage-select-overlay').style.display = 'none';
-        }
+        function closeOverlay() { isOverlayOpen = false; isWarping = false; }
 
+        let autosaveAcc = 0;
         function animate() {
             requestAnimationFrame(animate);
+            const _dt = 1 / 60;
+            autosaveAcc += _dt;
+            if (autosaveAcc > 10 && typeof playerState !== 'undefined' && typeof inventory !== 'undefined') {
+                autosaveAcc = 0;
+                playerState.syncFromInventory(inventory).save();
+            }
+            // Day/night sky + light drive
+            if (typeof sky !== 'undefined' && sky) {
+                const sun = scene.getObjectByName('terrain-sun');
+                const ambs = scene.children.filter(c => c.isAmbientLight);
+                sky.update(_dt, {
+                    camera: camera,
+                    sun: sun || undefined,
+                    ambient: ambs[0] || undefined,
+                    fog: scene.fog,
+                    background: scene.background
+                });
+                if (typeof clock !== 'undefined') clock.setHour(sky.getHour());
+            }
+            if (typeof nightSpawn !== 'undefined') {
+                nightSpawn.update(_dt);
+                nightSpawn.faceCamera(camera);
+                // Attach HP bars to new night spawns
+                if (typeof hpBars !== 'undefined') {
+                    nightSpawn.getEnemies().forEach(function (e) {
+                        if (e.mesh && !e.mesh.userData.hpBar) {
+                            hpBars.attach(e.mesh, { type: 'enemy', max: 3, current: 3, offsetY: 42 });
+                        }
+                    });
+                }
+            }
+            if (typeof hpBars !== 'undefined') hpBars.update(camera);
             updatePlayerMovement();
             checkEnemyCollisions();
             checkScreenProximity();
 
-            terminal.lookAt(camera.position.x, terminal.position.y, camera.position.z);
             player.faceCamera(camera);
             activeEnemies.forEach(e => e.faceCamera(camera));
             if (typeof overworldProps !== 'undefined') {
                 overworldProps.forEach(m => {
+                    if (m.userData && m.userData.isRoad) return;
+                    if (terrain && m.userData && m.userData.propH != null) {
+                        const gy = terrain.getHeight(m.userData.baseX, m.userData.baseZ);
+                        m.position.y = gy + m.userData.propH * 0.45;
+                    }
+                    m.lookAt(camera.position.x, m.position.y, camera.position.z);
+                });
+            }
+            // LOD cards face camera, stay soft on horizon
+            if (typeof lodGroup !== 'undefined') {
+                lodGroup.children.forEach(function (m) {
                     m.lookAt(camera.position.x, m.position.y, camera.position.z);
                 });
             }
             if (window._errorSign) {
                 window._errorSign.lookAt(camera.position.x, window._errorSign.position.y, camera.position.z);
             }
+            if (window._swordPickup && !window._swordTaken) {
+                window._swordPickup.lookAt(camera.position.x, window._swordPickup.position.y, camera.position.z);
+            }
+            if (window._oldMan) {
+                window._oldMan.lookAt(camera.position.x, window._oldMan.position.y, camera.position.z);
+            }
             RoomBuilderV3.faceBillboards(room, camera);
 
             statusEl.textContent = 'X:' + player.position.x.toFixed(0) + '  Z:' + player.position.z.toFixed(0) +
-                '   |   Enemies: ' + activeEnemies.length + '   |   Central Zone 5000×2560';
+                '   |   Field: ' + (typeof nightSpawn !== 'undefined' ? nightSpawn.getEnemies().length : 0) + '   |   ' + (typeof clock !== 'undefined' ? clock.getPhase() : '') + '   |   Zone 5000×4200 (W merged)';
 
             renderer.render(scene, camera);
         }
 
-        statusEl.textContent = 'MAIN overworld center — Open Zone 5000×2560 (Forest / room1)';
+        statusEl.textContent = 'MAIN overworld center — Open Zone 5000×4200 (W merged) (Forest / room1) | Check F12 console for 404s';
+        console.log('=== NEONDROMEDA DEBUG ===');
+        console.log('ChromaEngine: BYPASSED (direct load)');
+        console.log('RoomBuilderV3:', typeof RoomBuilderV3);
+        console.log('TerrainGeneratorV3:', typeof TerrainGeneratorV3);
+        console.log('HeightmapGeneratorV3:', typeof HeightmapGeneratorV3);
+        console.log('NormalmapGeneratorV3:', typeof NormalmapGeneratorV3);
+        console.log('terrain:', terrain ? 'created' : 'NULL');
+        console.log('room:', typeof room);
         animate();
 
         window.addEventListener('resize', () => {
@@ -549,6 +1234,7 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+        console.log('[DIRECT] Central Sector loaded - bypassed ChromaEngine');
     })();
     </script>
 </body>
