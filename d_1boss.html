@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neondromeda - Dungeon 1 Boss</title>
+  <style>
+    @font-face {
+      font-family: 'RetroCGA';
+      src: url('assets/fonts/Px437_IBM_CGA.ttf') format('truetype');
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      overflow: hidden;
+      background: #000;
+      color: #c0c0c0;
+      font-family: 'RetroCGA', monospace;
+    }
+    #canvas-container { width: 100vw; height: 100vh; }
+    #hud {
+      position: absolute; top: 20px; left: 20px; z-index: 20;
+      background: rgba(8, 8, 12, 0.92);
+      border: 2px solid #888;
+      padding: 10px 14px;
+      text-shadow: 0 0 4px #aaa;
+      max-width: 400px;
+      pointer-events: none;
+    }
+    #hud .title { font-size: 13px; letter-spacing: 0.1em; color: #ddd; }
+    #hud .sub { font-size: 11px; color: #999; margin-top: 4px; }
+
+    #boss-hud {
+      position: absolute; top: 20px; right: 20px; z-index: 20;
+      background: rgba(12, 4, 8, 0.92);
+      border: 2px solid #aa4466;
+      padding: 10px 14px;
+      min-width: 200px;
+      color: #fcc;
+    }
+    #boss-hud .label { font-size: 11px; margin-bottom: 6px; color: #f88; }
+    #hp-bar-bg {
+      width: 180px; height: 16px;
+      background: #221018;
+      border: 1px solid #664;
+    }
+    #hp-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #c22, #f66);
+      transition: width 0.2s;
+    }
+    #coin-count { font-size: 11px; margin-top: 8px; color: #fc8; }
+
+    #msg {
+      display: none;
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      background: rgba(8, 8, 14, 0.96);
+      border: 3px solid #ddd;
+      padding: 28px 40px;
+      text-align: center;
+      color: #eee;
+      font-size: 18px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px #fff;
+    }
+    #msg .submsg {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #8cf;
+      letter-spacing: 1px;
+    }
+    #msg .hint { margin-top: 18px; font-size: 11px; color: #777; }
+
+    #status {
+      position: absolute; bottom: 16px; left: 20px; z-index: 20;
+      font-size: 11px; color: #888;
+      background: rgba(0,0,0,0.75);
+      padding: 5px 10px;
+      border: 1px solid #444;
+    }
+    .scanlines {
+      position: absolute; inset: 0; z-index: 10;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 2px,
+        rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px
+      );
+      mix-blend-mode: multiply;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="scanlines"></div>
+
+  <div id="hud">
+    <div class="title">DUNGEON 1 // BOSS ROOM</div>
+    <div class="sub" id="hud-sub">COLLECT 3 COINS · THEN STRIKE THE GHOST · SPACE/F ATTACK</div>
+  </div>
+
+  <div id="boss-hud">
+    <div class="label">LARGE GHOST</div>
+    <div id="hp-bar-bg"><div id="hp-bar"></div></div>
+    <div id="coin-count">COINS: 0 / 3</div>
+  </div>
+
+  <div id="msg">
+    <div id="msg-main">CONGRATULATIONS!</div>
+    <div class="submsg" id="msg-sub">Head East on the road for the next sector.</div>
+    <div class="hint">PRESS ANY KEY TO RETURN TO ROAD 1</div>
+  </div>
+
+  <div id="status">Loading boss...</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
+  <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
+
+  <script>
+  (function () {
+    const container = document.getElementById('canvas-container');
+    const statusEl  = document.getElementById('status');
+    const hudSub    = document.getElementById('hud-sub');
+    const hpBar     = document.getElementById('hp-bar');
+    const coinEl    = document.getElementById('coin-count');
+    const msgBox    = document.getElementById('msg');
+
+    const BOSS_MAX_HP = 6;
+    let bossHp = BOSS_MAX_HP;
+    let coinsCollected = 0;
+    let bossVulnerable = false; // after 3 coins
+    let bossDefeated = false;
+    let victory = false;
+    let attackCooldown = 0;
+
+    function updateHud() {
+      const pct = Math.max(0, (bossHp / BOSS_MAX_HP) * 100);
+      hpBar.style.width = pct + '%';
+      coinEl.textContent = 'COINS: ' + coinsCollected + ' / 3';
+      if (coinsCollected >= 3 && !bossVulnerable) {
+        bossVulnerable = true;
+        hudSub.innerHTML = '<span style="color:#ff6">GHOST IS EXPOSED — ATTACK!</span>';
+      }
+    }
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0c0a10);
+    scene.fog = new THREE.FogExp2(0x0c0a10, 0.002);
+
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1200);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const loader = new THREE.TextureLoader();
+    function prep(tex) {
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.generateMipmaps = false;
+      return tex;
+    }
+
+    // Boss floor art if available
+    let floorMap = null;
+    try {
+      floorMap = prep(loader.load('LOCWTTP/D1BOSS.jpg'));
+    } catch (e) {}
+    const floorMat = new THREE.MeshBasicMaterial({
+      map: floorMap || null,
+      color: floorMap ? 0xffffff : 0x1a1520,
+      side: THREE.DoubleSide
+    });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = RoomBuilderV3.FLOOR_Y;
+    scene.add(floor);
+
+    // Dim light
+    scene.add(new THREE.AmbientLight(0x555566, 0.6));
+    const pulse = new THREE.PointLight(0xaa6688, 0.8, 300);
+    pulse.position.set(0, 80, -80);
+    scene.add(pulse);
+
+    // Arena walls
+    const S = RoomBuilderV3.shape;
+    const shapes = [
+      S({ id: 'bn', layer: 'L2', geo: 'Cube', scale: {x: 420, y: 70, z: 20}, sizeZ: 20,
+          position: {x: 0, y: 30, z: -220}, color: '#221828', solid: true }),
+      S({ id: 'bs', layer: 'L2', geo: 'Cube', scale: {x: 420, y: 70, z: 20}, sizeZ: 20,
+          position: {x: 0, y: 30, z: 180}, color: '#221828', solid: true }),
+      S({ id: 'bw', layer: 'L2', geo: 'Cube', scale: {x: 20, y: 70, z: 400}, sizeZ: 20,
+          position: {x: -200, y: 30, z: -20}, color: '#221828', solid: true }),
+      S({ id: 'be', layer: 'L2', geo: 'Cube', scale: {x: 20, y: 70, z: 400}, sizeZ: 20,
+          position: {x: 200, y: 30, z: -20}, color: '#221828', solid: true }),
+    ];
+    const room = RoomBuilderV3.build(scene, shapes);
+
+    // ---- Player ----
+    const player = SpriteSystemV3.createPlayer(loader, {
+      position: { x: 0, y: 0, z: 120 }
+    });
+    scene.add(player.mesh);
+
+    // ---- Boss: Large Ghost (shy / exposed) ----
+    const texShy = prep(loader.load('arcade_2/Pit/BOOSHY.png'));
+    const texFront = prep(loader.load('arcade_2/Pit/BOOFRONT-1.png'));
+    const bossMat = new THREE.MeshBasicMaterial({
+      map: texShy,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    const bossMesh = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), bossMat);
+    bossMesh.position.set(0, RoomBuilderV3.FLOOR_Y + 50, -80);
+    scene.add(bossMesh);
+
+    let bossHideTimer = 0;
+    let bossVisible = false; // when shy, faces away / hides
+
+    // ---- Coins (3) ----
+    const coinTex1 = prep(loader.load('arcade_2/Pit/COIN-1.png'));
+    const coinTex2 = prep(loader.load('arcade_2/Pit/COIN-2.png'));
+    const coinPositions = [
+      { x: -120, z: 40 },
+      { x: 130, z: -20 },
+      { x: -40, z: -140 }
+    ];
+    const coins = coinPositions.map((p, i) => {
+      const mat = new THREE.MeshBasicMaterial({
+        map: i % 2 === 0 ? coinTex1 : coinTex2,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), mat);
+      mesh.position.set(p.x, RoomBuilderV3.FLOOR_Y + 16, p.z);
+      mesh.userData = { collected: false };
+      scene.add(mesh);
+      return mesh;
+    });
+
+    // ---- Triforce collectible (appears after boss dies) ----
+    // Simple gold triangle group as stand-in if no sprite
+    const triGroup = new THREE.Group();
+    const triMat = new THREE.MeshBasicMaterial({
+      color: 0xffdd44,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide
+    });
+    // Three small planes arranged as triforce-ish
+    function triPiece(x, y) {
+      const g = new THREE.BufferGeometry();
+      const v = new Float32Array([0, 18, 0, -16, -12, 0, 16, -12, 0]);
+      g.setAttribute('position', new THREE.BufferAttribute(v, 3));
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, triMat);
+      m.position.set(x, y, 0);
+      return m;
+    }
+    triGroup.add(triPiece(0, 10));
+    triGroup.add(triPiece(-14, -12));
+    triGroup.add(triPiece(14, -12));
+    triGroup.position.set(0, RoomBuilderV3.FLOOR_Y + 30, -80);
+    triGroup.visible = false;
+    scene.add(triGroup);
+
+    // Optional heart/container sprite on top
+    const prizeTex = prep(loader.load('LOCWTTP/HEART.png'));
+    const prizeMat = new THREE.MeshBasicMaterial({
+      map: prizeTex, transparent: true, side: THREE.DoubleSide
+    });
+    const prizeMesh = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), prizeMat);
+    prizeMesh.position.set(0, RoomBuilderV3.FLOOR_Y + 28, -80);
+    prizeMesh.visible = false;
+    scene.add(prizeMesh);
+
+    // ---- Attack / combat ----
+    function tryAttack() {
+      if (attackCooldown > 0 || bossDefeated || victory) return;
+      attackCooldown = 25; // frames
+
+      if (!bossVulnerable) {
+        hudSub.textContent = 'Still hiding... collect 3 coins first!';
+        return;
+      }
+      if (!bossVisible) {
+        hudSub.textContent = 'Wait until it faces you!';
+        return;
+      }
+
+      const dist = player.mesh.position.distanceTo(bossMesh.position);
+      if (dist < 95) {
+        bossHp--;
+        updateHud();
+        // flash
+        bossMat.opacity = 0.4;
+        setTimeout(() => { bossMat.opacity = 1; }, 120);
+        if (bossHp <= 0) {
+          bossDefeated = true;
+          bossMesh.visible = false;
+          triGroup.visible = true;
+          prizeMesh.visible = true;
+          hudSub.innerHTML = '<span style="color:#ffd">COLLECT THE TRIFORCE!</span>';
+        }
+      }
+    }
+
+    function collectCoin(mesh) {
+      if (mesh.userData.collected) return;
+      mesh.userData.collected = true;
+      mesh.visible = false;
+      coinsCollected++;
+      updateHud();
+    }
+
+    function showVictory() {
+      victory = true;
+      msgBox.style.display = 'block';
+    }
+
+    // ---- Controls ----
+    const keys = { w: false, a: false, s: false, d: false };
+    window.addEventListener('keydown', e => {
+      if (victory) {
+        window.location.href = 'road_1.html';
+        return;
+      }
+      const k = e.key.toLowerCase();
+      if (k in keys) keys[k] = true;
+      if (k === 'f' || e.code === 'Space') {
+        e.preventDefault();
+        tryAttack();
+      }
+      if (e.code === 'Escape') {
+        window.location.href = 'd_1.html';
+      }
+    });
+    window.addEventListener('keyup', e => {
+      const k = e.key.toLowerCase();
+      if (k in keys) keys[k] = false;
+    });
+
+    let t = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      t += 0.016;
+      if (attackCooldown > 0) attackCooldown--;
+
+      if (!victory) {
+        let moving = false;
+        let dir = player.getDirection();
+        const speed = 3.5;
+        const pos = player.mesh.position;
+
+        if (keys.w) { pos.z -= speed; dir = 'up';    moving = true; }
+        if (keys.s) { pos.z += speed; dir = 'down';  moving = true; }
+        if (keys.a) { pos.x -= speed; if (!moving) dir = 'left';  moving = true; }
+        if (keys.d) { pos.x += speed; if (!moving) dir = 'right'; moving = true; }
+
+        pos.x = Math.max(-170, Math.min(170, pos.x));
+        pos.z = Math.max(-190, Math.min(150, pos.z));
+
+        player.setDirection(dir);
+        player.setMoving(moving);
+        player.update();
+        player.faceCamera(camera);
+
+        // Coin pickup
+        coins.forEach(c => {
+          if (!c.userData.collected && pos.distanceTo(c.position) < 40) {
+            collectCoin(c);
+          }
+        });
+
+        // Triforce pickup
+        if (bossDefeated && prizeMesh.visible) {
+          if (pos.distanceTo(prizeMesh.position) < 50) {
+            showVictory();
+          }
+        }
+
+        // Boss hide / show behavior
+        if (!bossDefeated) {
+          bossHideTimer += 0.016;
+          // Cycle: hide 2.2s, show 1.8s (only meaningful once vulnerable)
+          const cycle = bossHideTimer % 4.0;
+          if (bossVulnerable) {
+            bossVisible = cycle > 2.2;
+          } else {
+            // Always shy until coins collected
+            bossVisible = false;
+          }
+          bossMat.map = bossVisible ? texFront : texShy;
+          bossMat.needsUpdate = true;
+
+          // Drift
+          bossMesh.position.x = Math.sin(t * 0.7) * 50;
+          bossMesh.position.z = -80 + Math.cos(t * 0.5) * 20;
+        }
+
+        // Face camera
+        bossMesh.lookAt(camera.position.x, bossMesh.position.y, camera.position.z);
+        coins.forEach(c => {
+          if (!c.userData.collected)
+            c.lookAt(camera.position.x, c.position.y, camera.position.z);
+        });
+        if (prizeMesh.visible)
+          prizeMesh.lookAt(camera.position.x, prizeMesh.position.y, camera.position.z);
+        triGroup.rotation.y = t * 1.5;
+
+        pulse.intensity = 0.6 + Math.sin(t * 2) * 0.25;
+      }
+
+      RoomBuilderV3.faceBillboards(room, camera);
+
+      const p = player.mesh.position;
+      camera.position.x = p.x;
+      camera.position.y = p.y + 90;
+      camera.position.z = p.z + 150;
+      camera.lookAt(p.x, p.y + 15, p.z - 40);
+
+      statusEl.textContent =
+        'HP: ' + bossHp + '/' + BOSS_MAX_HP +
+        '  Coins: ' + coinsCollected + '/3' +
+        (bossVulnerable ? '  EXPOSED' : '  HIDING');
+
+      renderer.render(scene, camera);
+    }
+
+    updateHud();
+    statusEl.textContent = 'Boss ready';
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  })();
+  </script>
+</body>
+</html>

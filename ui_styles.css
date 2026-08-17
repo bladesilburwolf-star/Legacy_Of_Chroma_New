@@ -1,0 +1,101 @@
+/* UI Overlays */
+.game-overlay {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 600px;
+    max-width: 95vw;
+    max-height: 95vh;
+    z-index: 100;
+    box-shadow: 0 0 25px rgba(0, 255, 102, 0.5);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+/* Pause Overlay */
+#pause-overlay {
+    background-image: url('pause.jpg');
+}
+.pause-menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 15px;
+}
+.pause-btn {
+    background: rgba(0, 0, 0, 0.85);
+    color: #00ff66;
+    border: 2px solid #00ff66;
+    padding: 12px 24px;
+    font-family: 'RetroCGA', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    text-shadow: 0 0 5px #00ff66;
+    width: 220px;
+    text-align: center;
+    transition: all 0.2s;
+}
+.pause-btn:hover {
+    background: #00ff66;
+    color: #000;
+}
+
+/* Inventory Overlay */
+#inventory-overlay {
+    background-image: url('inventory.jpg');
+}
+.inventory-grid {
+    position: absolute;
+    top: 140px;
+    left: 70px;
+    width: 660px;
+    height: 380px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+.inventory-slot {
+    border: 1px dashed rgba(0, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border 0.2s;
+}
+.inventory-slot:hover {
+    border: 1px solid #00ffff;
+    background: rgba(0, 255, 255, 0.1);
+}
+
+/* Trophies Overlay */
+#trophies-overlay {
+    background-image: url('trophies.jpg');
+}
+.trophies-list {
+    position: absolute;
+    top: 100px;
+    left: 80px;
+    width: 640px;
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px;
+    overflow-y: auto;
+}
+.trophy-row {
+    color: #00ff66;
+    font-size: 12px;
+    text-shadow: 0 0 4px #00ff66;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 255, 102, 0.2);
+    padding-bottom: 6px;
+}

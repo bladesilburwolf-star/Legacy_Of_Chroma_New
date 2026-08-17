@@ -1,0 +1,1431 @@
+./arcade_1/arcade_1.js
+./arcade_1/cyberspace_invaders/[001838].jpg
+./arcade_1/cyberspace_invaders/[008404].jpg
+./arcade_1/cyberspace_invaders/[011452].jpg
+./arcade_1/cyberspace_invaders/Cyberspace invaders Machine.jpg
+./arcade_1/cyberspace_invaders/Cyberspace Invaders Title2.jpg
+./arcade_1/cyberspace_invaders/Cyberspace Invaders Title.jpg
+./arcade_1/cyberspace_invaders/cybervaders.html
+./arcade_1/cyberspace_invaders/PLYSHIP-1-0.png
+./arcade_1/cyberspace_invaders/SHIP1.png
+./arcade_1/cyberspace_invaders/SHIPS2-1.png
+./arcade_1/cyberspace_invaders/SHIPS2.png
+./arcade_1/cyberspace_invaders/SHIPS3-1.png
+./arcade_1/cyberspace_invaders/SHIPS3.png
+./arcade_1/cyberspace_invaders/SHIPS4-1.png
+./arcade_1/cyberspace_invaders/SHIPS4.png
+./arcade_1/cyberspace_invaders/SHIPS5-1.png
+./arcade_1/cyberspace_invaders/SHIPS5.png
+./arcade_1/cypac/Cyber Pac Machine.jpg
+./arcade_1/cypac/Cyberpac Title2.jpg
+./arcade_1/cypac/Cyberpac Title.jpg
+./arcade_1/cypac/cypac.html
+./arcade_1/cypac/Cypak Maze 12.jpg
+./arcade_1/cypac/DOT2.png
+./arcade_1/cypac/DOT.png
+./arcade_1/cypac/Main Background.jpg
+./arcade_1/cypac/Pac Walls2.png
+./arcade_1/cypac/Pac Walls.png
+./arcade_1/cypong/[011449].jpg
+./arcade_1/cypong/[011450].jpg
+./arcade_1/cypong/CPUPADHORIZ.png
+./arcade_1/cypong/Cyber Pong Arcade Machine.jpg
+./arcade_1/cypong/Cyberpong Title Screen2.jpg
+./arcade_1/cypong/Cyberpong Title Screen.jpg
+./arcade_1/cypong/cypong.html
+./arcade_1/cypong/Pad Pong 2.png
+./arcade_1/cypong/Pad Pong 3.png
+./arcade_1/cypong/PONGBALL-1.png
+./arcade_1/cypong/STAGE 1.jpg
+./arcade_1/cypong/STAGE 2.jpg
+./arcade_1/cypong/STAGE 3.jpg
+./arcade_1/cypong/STAGE 4.jpg
+./ARCADE 1 HUB 1.jpg
+./ARCADE 1 HUB 2.jpg
+./arcade_2/cyclon/[011453].jpg
+./arcade_2/cyclon/Cybertron Title Screen.jpg
+./arcade_2/cyclon/TheGrid1.png
+./arcade_2/cyclon/WALL2.png
+./arcade_2/cyclon/WALL3.png
+./arcade_2/digitarget/Digitarget Machine.jpg
+./arcade_2/Pit/BOOFRONT-1-0.png
+./arcade_2/Pit/BOOFRONT-1.png
+./arcade_2/Pit/BOOSHY.png
+./arcade_2/Pit/CHERRY-1.png
+./arcade_2/Pit/COIN-1.png
+./arcade_2/Pit/COIN-2.png
+./arcade_2/Pit/DOOR1-1.png
+./arcade_2/Pit/HPMETER-1-0.png
+./arcade_2/Pit/HPMETER-1.png
+./arcade_2/Pit/HPMETER-2-0.png
+./arcade_2/Pit/HPMETER-22.png
+./arcade_2/Pit/HPMETER-2.png
+./arcade_2/Pit/HPMETER-3-0.png
+./arcade_2/Pit/HPMETER-32.png
+./arcade_2/Pit/HPMETER-3.png
+./arcade_2/Pit/HPMETER-4-0.png
+./arcade_2/Pit/HPMETER-42.png
+./arcade_2/Pit/HPMETER-4.png
+./arcade_2/Pit/HPMETER-5-0.png
+./arcade_2/Pit/HPMETER-52.png
+./arcade_2/Pit/HPMETER-5.png
+./arcade_2/Pit/HPMETER-6-0.png
+./arcade_2/Pit/HPMETER-62.png
+./arcade_2/Pit/HPMETER-6.png
+./arcade_2/Pit/HPMETER-7-0.png
+./arcade_2/Pit/HPMETER-72.png
+./arcade_2/Pit/HPMETER-7.png
+./arcade_2/Pit/HPMETER-8-0.png
+./arcade_2/Pit/HPMETER-82.png
+./arcade_2/Pit/HPMETER-8.png
+./arcade_2/Pit/HPMETER-9.png
+./arcade_2/Pit/INTO THE PIT BOSS.png
+./arcade_2/Pit/INTO THE PIT TITLE.jpg
+./arcade_2/Pit/LADDER-1.png
+./arcade_2/Pit/MUSHROOM-1.png
+./arcade_2/Pit/MUSICNOTE-1.png
+./arcade_2/Pit/NewObject-1-8.png
+./arcade_2/Pit/NewObject-1-9.png
+./arcade_2/Pit/PIT2.jpg
+./arcade_2/Pit/Pit-3d-Arcade-Game.html
+./arcade_2/Pit/Pit-3d-Arcade.html
+./arcade_2/Pit/pitboss.html
+./arcade_2/Pit/PITHOUSE2.jpg
+./arcade_2/Pit/PITHOUSE.jpg
+./arcade_2/Pit/PIT.jpg
+./arcade_2/Pit/SHIELD1INV-1.png
+./ARCADE ROOM 1 BOSS.jpg
+./arcade_room_1.html
+./ARCADE ROOM 1 V X.jpg
+./arcade_room_2.html
+./ARCADE ROOM 2 HUB 1.jpg
+./ARCADE ROOM 2 HUB 2.jpg
+./assets/chests/BIGCHEST-1.png
+./assets/chests/BIGCHESTOPEN.png
+./assets/chests/SMALLCHEST-1.png
+./assets/chests/SMALLCHESTOPEN.png
+./assets/d1/D1 BOSS FLOOR.jpg
+./assets/d1/D1 BOSS WALLS.png
+./assets/d1/D1 FLOORS.jpg
+./assets/d1/D1 WALLS.png
+./assets/d2/D2 BOSS FLOOR.jpg
+./assets/d2/D2 BOSS WALLS.png
+./assets/d2/D2 FLOORS.jpg
+./assets/d2/D2 WALLS.png
+./assets/d3/D3 BOSS FLOOR.jpg
+./assets/d3/D3 BOSS WALLS.png
+./assets/d3/D3 FLOORS.jpg
+./assets/d3/D3 WALLS.png
+./assets/dungeons/BOSSDOOR-1-0.png
+./assets/dungeons/LOCKEDDOOR-1.png
+./assets/Effects/bevel-pixi-filter.js
+./assets/Effects/crt-pixi-filter.js
+./assets/Effects/glow-pixi-filter.js
+./assets/Effects/outline-pixi-filter.js
+./assets/Effects/pixi-filters/filter-bevel.js
+./assets/Effects/pixi-filters/filter-crt.js
+./assets/Effects/pixi-filters/filter-glow.js
+./assets/Effects/pixi-filters/filter-outline.js
+./assets/Effects/pixi-filters/filter-rgb-split.js
+./assets/Effects/rgb-split-pixi-filter.js
+./assets/enemies/ARCFRONT.png
+./assets/enemies/BOOEY-1-0.png
+./assets/enemies/CHROMAC-1.png
+./assets/enemies/Chromac Final Form.png
+./assets/enemies/CHROMAC FORM 2.png
+./assets/enemies/CHROMAC FORM 3.png
+./assets/enemies/CYPAKD-1.png
+./assets/enemies/CYPAKL.png
+./assets/enemies/CYPAKR.png
+./assets/enemies/CYPAKU-1.png
+./assets/enemies/D3BOSS.png
+./assets/enemies/ENEMY.png
+./assets/enemies/GHOSTHARDL.png
+./assets/enemies/GHOSTHARDR.png
+./assets/enemies/GIANTNIBDOWN.png
+./assets/enemies/GIANTNIBL.png
+./assets/enemies/GIANTNIBR.png
+./assets/enemies/GIANTNIBUP.png
+./assets/enemies/GOODBYEL.png
+./assets/enemies/GOODBYER.png
+./assets/enemies/HELLOL.png
+./assets/enemies/HELLOR.png
+./assets/enemies/KNIGHTHARDDOWN (1).png
+./assets/enemies/KNIGHTHARDLEFT.png
+./assets/enemies/KNIGHTHARDR.png
+./assets/enemies/KNIGHTHARDUP.png
+./assets/enemies/KNIGHTL-1.png
+./assets/enemies/KNIGHTR-1.png
+./assets/enemies/KNIGHTUP-1-0.png
+./assets/enemies/KNIGHTUP-1.png
+./assets/enemies/LEAFY-1-0.png
+./assets/enemies/NEONIBDOWN (1).png
+./assets/enemies/NEONIBLEFT.png
+./assets/enemies/NEONIBRIGHT.png
+./assets/enemies/NEONIBUP.png
+./assets/enemies/NEONSKULL-1.png
+./assets/enemies/NEONSKULLHARD.png
+./assets/enemies/NEOPEDEDOWN.png
+./assets/enemies/NEOPEDELEFT.png
+./assets/enemies/NEOPEDERIGHT.png
+./assets/enemies/NEOPEDEUP.png
+./assets/enemies/NIBDOWN-1.png
+./assets/enemies/NIBLEFT-1.png
+./assets/enemies/NIBRIGHT-1.png
+./assets/enemies/NIBUP-1.png
+./assets/enemies/RUBY-1-1.png
+./assets/enemies/RUBY-1-2.png
+./assets/enemies/SLIME-1-0.png
+./assets/enemies/SLIME-1.png
+./assets/enemies/SLIME-2.png
+./assets/enemies/SLIMEHARD-1.png
+./assets/enemies/SLIMEHARD-2.png
+./assets/enemies/SOLDIERHARDL.png
+./assets/enemies/SOLDIERHARDR (2).png
+./assets/enemies/SOLDIERHARDR.png
+./assets/enemies/SOLDIERL-1-0.png
+./assets/enemies/SOLDIERL-1.png
+./assets/enemies/SOLDIERRIGHT.png
+./assets/enemies/SUNNY-1.png
+./assets/events-tools/cameratools.js
+./assets/events-tools/commontools.js
+./assets/events-tools/inputtools.js
+./assets/events-tools/networktools.js
+./assets/events-tools/objecttools.js
+./assets/events-tools/runtimescenetools.js
+./assets/events-tools/soundtools.js
+./assets/events-tools/storagetools.js
+./assets/events-tools/stringtools.js
+./assets/events-tools/windowtools.js
+./assets/fonts/Px437_IBM_CGA.ttf
+./assets/fonts/Px437_TandyNew_225-2y.ttf
+./assets/fonts/Px437_TandyNew_TV-2y.ttf
+./assets/fonts/Px437_TandyNew_TV.ttf
+./assets/fonts/Px437_TandyOld_225.ttf
+./assets/fonts/Px437_TandyOld_TV-2y.ttf
+./assets/fonts/Px437_VGA_SquarePx.ttf
+./assets/hud/1-1.png
+./assets/hud/1HEART.png
+./assets/hud/1HP.png
+./assets/hud/2-1.png
+./assets/hud/2HP.png
+./assets/hud/2LIFE-1.png
+./assets/hud/3HP.png
+./assets/hud/3LIFE-1.png
+./assets/hud/4HP.png
+./assets/hud/4LIFE-1.png
+./assets/hud/5HP.png
+./assets/hud/5LIFE-1.png
+./assets/hud/6HP.png
+./assets/hud/7HP.png
+./assets/hud/8HO.png
+./assets/hud/ENEMY1HP.png
+./assets/hud/ENEMY2HP.png
+./assets/hud/ENEMY3HP.png
+./assets/hud/ENEMY4HP.png
+./assets/hud/ENEMY5HP.png
+./assets/hud/ENEMY6HP.png
+./assets/hud/ENEMY7HP.png
+./assets/hud/ENEMY8HP.png
+./assets/inventory/ARROW DOWN.png
+./assets/inventory/ARROW LEFT.png
+./assets/inventory/ARROW LIGHT DOWN.png
+./assets/inventory/ARROW LIGHT LEFT.png
+./assets/inventory/ARROW LIGHT RIGHT.png
+./assets/inventory/ARROW LIGHT UP.png
+./assets/inventory/ARROW RIGHT.png
+./assets/inventory/ARROW UP.png
+./assets/inventory/BIG KEY.png
+./assets/inventory/BOMBS-1.png
+./assets/inventory/BOMBS.png
+./assets/inventory/BOW DOWN.png
+./assets/inventory/BOW LEFT.png
+./assets/inventory/BOW RIGHT.png
+./assets/inventory/BOW UP.png
+./assets/inventory/CHROMAC KEY.png
+./assets/inventory/CONTAINER-1.png
+./assets/inventory/DOWN-1.png
+./assets/inventory/GAUNTLET-1.png
+./assets/inventory/ICICLE-1.png
+./assets/Inventory/inventory.js
+./assets/Inventory/inventorytools.js
+./assets/inventory/LADDER-1.png
+./assets/inventory/LANTERN-1.png
+./assets/inventory/METALSWORD-1.png
+./assets/inventory/METALSWORD.png
+./assets/inventory/MUSICNOTE-1.png
+./assets/inventory/NewObject-1-8.png
+./assets/inventory/PLASMASWORD.png
+./assets/inventory/RAFT-1-0.png
+./assets/inventory/RAFT-1.png
+./assets/inventory/SLAZER.png
+./assets/inventory/SMALL KEY.png
+./assets/inventory/UP-1.png
+./assets/inventory/WOODSWORD-1.png
+./assets/main_menu/gallery/[000532].jpg
+./assets/main_menu/gallery/[000534].jpg
+./assets/main_menu/gallery/[000535].jpg
+./assets/main_menu/gallery/007 1.jpg
+./assets/main_menu/gallery/[008438].jpg
+./assets/main_menu/gallery/10.jpg
+./assets/main_menu/gallery/11.jpg
+./assets/main_menu/gallery/12.jpg
+./assets/main_menu/gallery/13.jpg
+./assets/main_menu/gallery/14.jpg
+./assets/main_menu/gallery/15.jpg
+./assets/main_menu/gallery/16.jpg
+./assets/main_menu/gallery/17.jpg
+./assets/main_menu/gallery/18.jpg
+./assets/main_menu/gallery/19.jpg
+./assets/main_menu/gallery/1.jpg
+./assets/main_menu/gallery/21.jpg
+./assets/main_menu/gallery/22.jpg
+./assets/main_menu/gallery/23.jpg
+./assets/main_menu/gallery/24.jpg
+./assets/main_menu/gallery/25.jpg
+./assets/main_menu/gallery/26.jpg
+./assets/main_menu/gallery/27.jpg
+./assets/main_menu/gallery/28.jpg
+./assets/main_menu/gallery/29.jpg
+./assets/main_menu/gallery/2.jpg
+./assets/main_menu/gallery/30.jpg
+./assets/main_menu/gallery/31.jpg
+./assets/main_menu/gallery/32.jpg
+./assets/main_menu/gallery/33.jpg
+./assets/main_menu/gallery/34.jpg
+./assets/main_menu/gallery/35.jpg
+./assets/main_menu/gallery/36.jpg
+./assets/main_menu/gallery/37.jpg
+./assets/main_menu/gallery/38.jpg
+./assets/main_menu/gallery/39.jpg
+./assets/main_menu/gallery/3D Special Cycle Front.jpg
+./assets/main_menu/gallery/3D Special Cycle Right.jpg
+./assets/main_menu/gallery/3.jpg
+./assets/main_menu/gallery/40.jpg
+./assets/main_menu/gallery/41.jpg
+./assets/main_menu/gallery/42.jpg
+./assets/main_menu/gallery/43.jpg
+./assets/main_menu/gallery/44.jpg
+./assets/main_menu/gallery/45.jpg
+./assets/main_menu/gallery/46.jpg
+./assets/main_menu/gallery/47.jpg
+./assets/main_menu/gallery/48.jpg
+./assets/main_menu/gallery/49.jpg
+./assets/main_menu/gallery/4.jpg
+./assets/main_menu/gallery/5.jpg
+./assets/main_menu/gallery/6.jpg
+./assets/main_menu/gallery/7.jpg
+./assets/main_menu/gallery/8.jpg
+./assets/main_menu/gallery/9.jpg
+./assets/main_menu/gallery/BC 1_1.jpg
+./assets/main_menu/gallery/BOMB EXPLODE.jpg
+./assets/main_menu/gallery/CLOCKWORX ARTS 1_1.jpg
+./assets/main_menu/gallery/convert_png_to_jpg.py
+./assets/main_menu/gallery/CPUNK 1_10.jpg
+./assets/main_menu/gallery/CPUNK 1_1.jpg
+./assets/main_menu/gallery/CPUNK 1_2.jpg
+./assets/main_menu/gallery/CPUNK 1_3.jpg
+./assets/main_menu/gallery/CPUNK 1_4.jpg
+./assets/main_menu/gallery/CPUNK 1_5.jpg
+./assets/main_menu/gallery/CPUNK 1_6.jpg
+./assets/main_menu/gallery/CPUNK 1_7.jpg
+./assets/main_menu/gallery/CPUNK 1_8.jpg
+./assets/main_menu/gallery/FAIR TAIL 1_1.jpg
+./assets/main_menu/gallery/FIGHT 1_1.jpg
+./assets/main_menu/gallery/FIGHT 1_2.jpg
+./assets/main_menu/gallery/FIGHT 1_3.jpg
+./assets/main_menu/gallery/gallery.html
+./assets/main_menu/gallery/GOTHAM 1_1.jpg
+./assets/main_menu/gallery/GUN CONCEPT 1_1.jpg
+./assets/main_menu/gallery/MagicianTrix Arts 2020 Logo.jpg
+./assets/main_menu/gallery/NEOTOKYO SHOPPING.jpg
+./assets/main_menu/gallery/SEASONS OF TIME 1_1.jpg
+./assets/main_menu/gallery/SEASONS OF TIME 1_2.jpg
+./assets/main_menu/gallery/SONIC 1_1.jpg
+./assets/main_menu/gallery/STAR OCEAN 1_1.jpg
+./assets/main_menu/gallery/STEAMPUNK MAID.jpg
+./assets/main_menu/gallery/tumblr_nkxn3dKRUJ1sl0rr2o7_500_3.jpg
+./assets/main_menu/gallery/TUROK_VR.jpg
+./assets/main_menu/gallery/UV Dancer.jpg
+./assets/main_menu/gallery/Vintage Computer Cover 2.jpg
+./assets/main_menu/gallery/WEOWNTHENIGHT.jpg
+./assets/main_menu/jukebox/convert_png_to_jpg.py
+./assets/main_menu/jukebox/Juke 12.jpg
+./assets/main_menu/jukebox/Juke 1.jpg
+./assets/main_menu/jukebox/Juke 2.jpg
+./assets/main_menu/jukebox/Juke 3.jpg
+./assets/main_menu/jukebox/Juke 4.jpg
+./assets/main_menu/jukebox/jukebox.html
+./assets/main_menu/jukebox/Juke Entrance.jpg
+./assets/main_menu/jukebox/Lunar CD Player.jpg
+./assets/maps/D1/D1B.png
+./assets/maps/D1/D1.map
+./assets/maps/D1/D1.png
+./assets/maps/D1/D1.txt
+./assets/maps/D2/D2B.png
+./assets/maps/D2/D2.map
+./assets/maps/D2/D2.png
+./assets/maps/D2/D2.txt
+./assets/maps/D3/D3B.png
+./assets/maps/D3/D3.map
+./assets/maps/D3/D3.png
+./assets/maps/D3/D3.txt
+./assets/maps/D4/D4GUIDE.png
+./assets/maps/D4/D4.map
+./assets/maps/D5/D5GUIDE.png
+./assets/maps/D5/D5.map
+./assets/maps/D6/D6GUIDE.png
+./assets/maps/D6/D6.map
+./assets/maps/D7/D7GUIDE.png
+./assets/maps/D7/D7.map
+./assets/maps/main/main.map
+./assets/maps/main/main.png
+./assets/maps/main/OVERWORLD MAP.png
+./assets/maps/room1/create3DTextPlane.js
+./assets/maps/room1/room1.map
+./assets/maps/room1/room1.png
+./assets/maps/room1/room1_v2.map
+./assets/maps/room1/TextBoardLoader.js
+./assets/maps/room1_v2.map
+./assets/maps/temp_playtest.map
+./assets/npc/OLDMAN1-1.png
+./assets/overlay.png
+./assets/overworld/BOULDER-1-0.png
+./assets/overworld/BOULDER-1.png
+./assets/overworld/CRACKEDWALL-1.png
+./assets/overworld/OVERWORLD GROUND.jpg
+./assets/overworld/OVERWORLD MAP.png
+./assets/overworld/OVERWORLD OBJECTS.png
+./assets/overworld/OVERWORLD_WALLS.png
+./assets/overworld/TREE1-1.png
+./assets/particles/BOMB EXPLODE.png
+./assets/particles/EXPLODE-1.png
+./assets/particles/FIREBALL-1.png
+./assets/particles/LAZER-1-0.png
+./assets/particles/LAZER-2.png
+./assets/particles/LAZER-3.png
+./assets/particles/LAZERLEFT-1.png
+./assets/particles/LAZERLEFT (1).png
+./assets/particles/LAZERLEFT-2.png
+./assets/particles/LAZERLEFT (2).png
+./assets/particles/LAZERLEFT-3.png
+./assets/particles/LAZERLEFT (3).png
+./assets/particles/LAZERRIGHT (1).png
+./assets/particles/LAZERRIGHT (2).png
+./assets/particles/LAZERRIGHT (3).png
+./assets/particles/LAZERUP-1.png
+./assets/particles/LAZERUP (1).png
+./assets/particles/LAZERUP-2.png
+./assets/particles/LAZERUP (2).png
+./assets/particles/LAZERUP-3.png
+./assets/particles/LAZERUP (3).png
+./assets/particles/LEFT-1.png
+./assets/particles/RIGHT-1.png
+./assets/player2/pl2down.png
+./assets/player2/pl2left.png
+./assets/player2/pl2right.png
+./assets/player2/pl2up.png
+./assets/player3/pl3left.png
+./assets/player3/pl3right.png
+./assets/player_animations_events/BIGKEY-1.png
+./assets/player_animations_events/BIGKEY-2.png
+./assets/player_animations_events/BIGKEY.png
+./assets/player_animations_events/BOMBS-12.png
+./assets/player_animations_events/BOMBS-2.png
+./assets/player_animations_events/BOMBS2.png
+./assets/player_animations_events/BOMBTOSS-1.png
+./assets/player_animations_events/BOMBTOSS-2.png
+./assets/player_animations_events/BOWDOWN.png
+./assets/player_animations_events/BOWLEFT.png
+./assets/player_animations_events/BOWRIGHT.png
+./assets/player_animations_events/BOWUP-1.png
+./assets/player_animations_events/BOWUP.png
+./assets/player_animations_events/CHROMACKEY-1.png
+./assets/player_animations_events/CHROMACKEY-2.png
+./assets/player_animations_events/CHROMACKEY.png
+./assets/player_animations_events/GAUNTLET-12.png
+./assets/player_animations_events/GAUNTLET-2.png
+./assets/player_animations_events/GAUNTLET.png
+./assets/player_animations_events/GET RAFT.png
+./assets/player_animations_events/GETSWORD1.png
+./assets/player_animations_events/GETSWORD2.png
+./assets/player_animations_events/GETSWORD3.png
+./assets/player_animations_events/HEART.png
+./assets/player_animations_events/HOLDINGBOMB-1.png
+./assets/player_animations_events/HOLDINGBOMB.png
+./assets/player_animations_events/ICEBOW1.png
+./assets/player_animations_events/ICEBOW.png
+./assets/player_animations_events/LADDER.png
+./assets/player_animations_events/LANTERN HOLD.png
+./assets/player_animations_events/LAZER.png
+./assets/player_animations_events/PIECE.png
+./assets/player_animations_events/RAFTDOWN.png
+./assets/player_animations_events/RAFTLEFT.png
+./assets/player_animations_events/RAFTRIGHT.png
+./assets/player_animations_events/RAFTUP.png
+./assets/player_animations_events/SMALLKEY-12.png
+./assets/player_animations_events/SMALLKEY-2.png
+./assets/player_animations_events/SMALLKEY.png
+./assets/player_animations_events/SWORDDOWN-1.png
+./assets/player_animations_events/SWORDLEFT-1.png
+./assets/player_animations_events/SWORDLEFT.png
+./assets/player_animations_events/SWORDRIGHT.png
+./assets/player_animations_events/SWORDUP-1.png
+./assets/player_animations_events/SWORDUP.png
+./assets/player_animations_events/VRMANBACK-1.png
+./assets/player_animations_events/VRMANBACK.png
+./assets/player_animations_events/VRMANL.png
+./assets/player_animations_events/VRMANR-1.png
+./assets/player/SWORDDOWN-1.png
+./assets/player/SWORDLEFT-1.png
+./assets/player/SWORDLEFT.png
+./assets/player/SWORDRIGHT.png
+./assets/player/SWORDUP-1.png
+./assets/player/SWORDUP.png
+./assets/player/VRMANBACK-1.png
+./assets/player/VRMANBACK.png
+./assets/player/VRMANL.png
+./assets/player/VRMANR-1.png
+./assets/player/VRMANR.png
+./assets/secret_factory/CHROMAC-1.png
+./assets/secret_factory/CHROMAC FORM 2.png
+./assets/secret_factory/CHROMAC FORM 3.png
+./assets/secret_factory/SECRET FACTORY 2.jpg
+./assets/secret_factory/SECRET_FACTORY_INVERTED.jpg
+./assets/secret_factory/SECRET FACTORY.jpg
+./assets/start/BEGINNING FLOOR.jpg
+./assets/start/BEGINNING.png
+./assets/storage/bigchestclosed.png
+./assets/storage/smallchestclosed.png
+./assets/story/DEMO 1 END.jpg
+./assets/story/TITLE SCREEN.jpg
+./assets/textures/bark1.jpg
+./assets/textures/bark2.jpg
+./assets/textures/dirt1.jpg
+./assets/textures/glass1.jpg
+./assets/textures/glass2.jpg
+./assets/textures/grass1.jpg
+./assets/textures/housewall1.jpg
+./assets/textures/housewall2.jpg
+./assets/textures/housewall3.jpg
+./assets/textures/ladder1.jpg
+./assets/textures/magma1.jpg
+./assets/textures/metal1.jpg
+./assets/textures/metal2.jpg
+./assets/textures/metal3.jpg
+./assets/textures/planks1.jpg
+./assets/textures/raft1.jpg
+./assets/textures/raft2.jpg
+./assets/textures/rcok2.jpg
+./assets/textures/rcok3.jpg
+./assets/textures/rock1.jpg
+./assets/textures/rock2.jpg
+./assets/textures/rock3.jpg
+./assets/textures/rock4.jpg
+./assets/textures/rock5.jpg
+./assets/textures/roof2.jpg
+./assets/textures/roof3.jpg
+./assets/textures/rooff1.jpg
+./assets/textures/sand1.jpg
+./assets/textures/sand2.jpg
+./assets/textures/sand3.jpg
+./assets/textures/sand4.jpg
+./assets/textures/skybox/day1.jpg
+./assets/textures/skybox/day2.jpg
+./assets/textures/skybox/day3.jpg
+./assets/textures/skybox/day4.jpg
+./assets/textures/skybox/day5.jpg
+./assets/textures/skybox/night1.jpg
+./assets/textures/skybox/night2.jpg
+./assets/textures/skybox/night3.jpg
+./assets/textures/skybox/night4.jpg
+./assets/textures/skybox/overcast1.jpg
+./assets/textures/skybox/overcast2.jpg
+./assets/textures/skybox/overcast3.jpg
+./assets/textures/skybox/stomry1.jpg
+./assets/textures/stone1.jpg
+./assets/textures/stone2.jpg
+./assets/textures/stone3.jpg
+./assets/textures/stone4.jpg
+./assets/textures/water1.jpg
+./assets/ui/3D HUD.png
+./assets/ui/BOSSHP (1).png
+./assets/ui/BOSSHP (2).png
+./assets/ui/BOSSHP (3).png
+./assets/ui/BOSSHP (4).png
+./assets/ui/BOSSHP (5).png
+./assets/ui/BOSSHP (6).png
+./assets/ui/BOSSHP (7).png
+./assets/ui/BOSSHP (8).png
+./assets/ui/INVENTORY SCREEN.jpg
+./assets/ui/PAUSE SCREEN.jpg
+./assets/weapons/bomb.png
+./assets/weapons/bow.png
+./assets/weapons/sword1.png
+./assets/weapons/sword2.png
+./assets/weapons/sword3.png
+./Astrobit Video Player.jpg
+./beginning.html
+./CHAPTER II ROAD.jpg
+./CHAPTER I ROAD.jpg
+./chromac.jpg
+./CHROMA TITLE.jpg
+./convert_png_to_jpg.py
+./cyspace_levels.jpg
+./d_1boss.html
+./d_1.html
+./DestroyOutsideBehavior/destroyoutsideruntimebehavior.js
+./floor.jpg
+./GAME START2.jpg
+./GAME START.jpg
+./.gitignore
+./HUD.png
+./index.html
+./logs/CLAUDE_SESSION_LOG.md
+./logs/GEMINI_SESSION_LOG.md
+./logs/NEONDROMEDA_V3_HANDOFF_README.md
+./logs/ROOMBUILDER_SPRITESYSTEM_V3_README.md
+./main_menu.html
+./main_menu.jpg
+./main.py
+./NEONDROMEDA_NEW_STRUCTURE.txt
+./pause.jpg
+./Physics2Behavior/box2d.js
+./Physics2Behavior/physics2runtimebehavior.js
+./README.md
+./road_1.html
+./road_2.html
+./run.sh
+./skybox_monochrome.jpg
+./src/engine/Three_js_system/camera_controls_v3.js
+./src/engine/Three_js_system/chroma_engine.js
+./src/engine/Three_js_system/combat_system_v3.js
+./src/engine/Three_js_system/heightmap_generator_v3.js
+./src/engine/Three_js_system/interact_system_v3.js
+./src/engine/Three_js_system/menu_system.js
+./src/engine/Three_js_system/normalmap_generator_v3.js
+./src/engine/Three_js_system/room_builder_v3.js
+./src/engine/Three_js_system/rooms/d1_room.js
+./src/engine/Three_js_system/scoreboard_v3.js
+./src/engine/Three_js_system/sprite_system_v3.js
+./src/engine/Three_js_system/terrain_generator_v3.js
+./story.html
+./story.jpg
+./TextObject/textruntimeobject.js
+./TextObject/textruntimeobject-pixi-renderer.js
+./TiledSpriteObject/tiledspriteruntimeobject.js
+./TiledSpriteObject/tiledspriteruntimeobject-pixi-renderer.js
+./title.html
+./title.jpg
+./TopDownMovementBehavior/topdownmovementruntimebehavior.js
+./trophies.jpg
+./ui_styles.css
+---
+.:
+arcade_1
+ARCADE 1 HUB 1.jpg
+ARCADE 1 HUB 2.jpg
+arcade_2
+ARCADE ROOM 1 BOSS.jpg
+arcade_room_1.html
+ARCADE ROOM 1 V X.jpg
+arcade_room_2.html
+ARCADE ROOM 2 HUB 1.jpg
+ARCADE ROOM 2 HUB 2.jpg
+assets
+Astrobit Video Player.jpg
+beginning.html
+CHAPTER II ROAD.jpg
+CHAPTER I ROAD.jpg
+chromac.jpg
+CHROMA TITLE.jpg
+convert_png_to_jpg.py
+cyspace_levels.jpg
+d_1boss.html
+d_1.html
+DestroyOutsideBehavior
+floor.jpg
+GAME START2.jpg
+GAME START.jpg
+HUD.png
+index.html
+logs
+main_menu.html
+main_menu.jpg
+main.py
+NEONDROMEDA_NEW_STRUCTURE.txt
+pause.jpg
+Physics2Behavior
+README.md
+road_1.html
+road_2.html
+run.sh
+skybox_monochrome.jpg
+src
+story.html
+story.jpg
+TextObject
+TiledSpriteObject
+title.html
+title.jpg
+TopDownMovementBehavior
+trophies.jpg
+ui_styles.css
+
+./arcade_1:
+arcade_1.js
+cyberspace_invaders
+cypac
+cypong
+
+./arcade_1/cyberspace_invaders:
+[001838].jpg
+[008404].jpg
+[011452].jpg
+Cyberspace invaders Machine.jpg
+Cyberspace Invaders Title2.jpg
+Cyberspace Invaders Title.jpg
+cybervaders.html
+PLYSHIP-1-0.png
+SHIP1.png
+SHIPS2-1.png
+SHIPS2.png
+SHIPS3-1.png
+SHIPS3.png
+SHIPS4-1.png
+SHIPS4.png
+SHIPS5-1.png
+SHIPS5.png
+
+./arcade_1/cypac:
+Cyber Pac Machine.jpg
+Cyberpac Title2.jpg
+Cyberpac Title.jpg
+cypac.html
+Cypak Maze 12.jpg
+DOT2.png
+DOT.png
+Main Background.jpg
+Pac Walls2.png
+Pac Walls.png
+
+./arcade_1/cypong:
+[011449].jpg
+[011450].jpg
+CPUPADHORIZ.png
+Cyber Pong Arcade Machine.jpg
+Cyberpong Title Screen2.jpg
+Cyberpong Title Screen.jpg
+cypong.html
+Pad Pong 2.png
+Pad Pong 3.png
+PONGBALL-1.png
+STAGE 1.jpg
+STAGE 2.jpg
+STAGE 3.jpg
+STAGE 4.jpg
+
+./arcade_2:
+cyclon
+digitarget
+Pit
+
+./arcade_2/cyclon:
+[011453].jpg
+Cybertron Title Screen.jpg
+TheGrid1.png
+WALL2.png
+WALL3.png
+
+./arcade_2/digitarget:
+Digitarget Machine.jpg
+
+./arcade_2/Pit:
+BOOFRONT-1-0.png
+BOOFRONT-1.png
+BOOSHY.png
+CHERRY-1.png
+COIN-1.png
+COIN-2.png
+DOOR1-1.png
+HPMETER-1-0.png
+HPMETER-1.png
+HPMETER-2-0.png
+HPMETER-22.png
+HPMETER-2.png
+HPMETER-3-0.png
+HPMETER-32.png
+HPMETER-3.png
+HPMETER-4-0.png
+HPMETER-42.png
+HPMETER-4.png
+HPMETER-5-0.png
+HPMETER-52.png
+HPMETER-5.png
+HPMETER-6-0.png
+HPMETER-62.png
+HPMETER-6.png
+HPMETER-7-0.png
+HPMETER-72.png
+HPMETER-7.png
+HPMETER-8-0.png
+HPMETER-82.png
+HPMETER-8.png
+HPMETER-9.png
+INTO THE PIT BOSS.png
+INTO THE PIT TITLE.jpg
+LADDER-1.png
+MUSHROOM-1.png
+MUSICNOTE-1.png
+NewObject-1-8.png
+NewObject-1-9.png
+PIT2.jpg
+Pit-3d-Arcade-Game.html
+Pit-3d-Arcade.html
+pitboss.html
+PITHOUSE2.jpg
+PITHOUSE.jpg
+PIT.jpg
+SHIELD1INV-1.png
+
+./assets:
+backgrounds
+chests
+d1
+d2
+d3
+dungeons
+Effects
+enemies
+events-tools
+fonts
+hud
+inventory
+Inventory
+main_menu
+maps
+misc
+npc
+overlay.png
+overworld
+particles
+player
+player2
+player3
+player_animations_events
+secret_factory
+start
+storage
+story
+textures
+ui
+weapons
+
+./assets/backgrounds:
+
+./assets/chests:
+BIGCHEST-1.png
+BIGCHESTOPEN.png
+SMALLCHEST-1.png
+SMALLCHESTOPEN.png
+
+./assets/d1:
+D1 BOSS FLOOR.jpg
+D1 BOSS WALLS.png
+D1 FLOORS.jpg
+D1 WALLS.png
+
+./assets/d2:
+D2 BOSS FLOOR.jpg
+D2 BOSS WALLS.png
+D2 FLOORS.jpg
+D2 WALLS.png
+
+./assets/d3:
+D3 BOSS FLOOR.jpg
+D3 BOSS WALLS.png
+D3 FLOORS.jpg
+D3 WALLS.png
+
+./assets/dungeons:
+BOSSDOOR-1-0.png
+LOCKEDDOOR-1.png
+
+./assets/Effects:
+bevel-pixi-filter.js
+crt-pixi-filter.js
+glow-pixi-filter.js
+outline-pixi-filter.js
+pixi-filters
+rgb-split-pixi-filter.js
+
+./assets/Effects/pixi-filters:
+filter-bevel.js
+filter-crt.js
+filter-glow.js
+filter-outline.js
+filter-rgb-split.js
+
+./assets/enemies:
+ARCFRONT.png
+BOOEY-1-0.png
+CHROMAC-1.png
+Chromac Final Form.png
+CHROMAC FORM 2.png
+CHROMAC FORM 3.png
+CYPAKD-1.png
+CYPAKL.png
+CYPAKR.png
+CYPAKU-1.png
+D3BOSS.png
+ENEMY.png
+GHOSTHARDL.png
+GHOSTHARDR.png
+GIANTNIBDOWN.png
+GIANTNIBL.png
+GIANTNIBR.png
+GIANTNIBUP.png
+GOODBYEL.png
+GOODBYER.png
+HELLOL.png
+HELLOR.png
+KNIGHTHARDDOWN (1).png
+KNIGHTHARDLEFT.png
+KNIGHTHARDR.png
+KNIGHTHARDUP.png
+KNIGHTL-1.png
+KNIGHTR-1.png
+KNIGHTUP-1-0.png
+KNIGHTUP-1.png
+LEAFY-1-0.png
+NEONIBDOWN (1).png
+NEONIBLEFT.png
+NEONIBRIGHT.png
+NEONIBUP.png
+NEONSKULL-1.png
+NEONSKULLHARD.png
+NEOPEDEDOWN.png
+NEOPEDELEFT.png
+NEOPEDERIGHT.png
+NEOPEDEUP.png
+NIBDOWN-1.png
+NIBLEFT-1.png
+NIBRIGHT-1.png
+NIBUP-1.png
+RUBY-1-1.png
+RUBY-1-2.png
+SLIME-1-0.png
+SLIME-1.png
+SLIME-2.png
+SLIMEHARD-1.png
+SLIMEHARD-2.png
+SOLDIERHARDL.png
+SOLDIERHARDR (2).png
+SOLDIERHARDR.png
+SOLDIERL-1-0.png
+SOLDIERL-1.png
+SOLDIERRIGHT.png
+SUNNY-1.png
+
+./assets/events-tools:
+cameratools.js
+commontools.js
+inputtools.js
+networktools.js
+objecttools.js
+runtimescenetools.js
+soundtools.js
+storagetools.js
+stringtools.js
+windowtools.js
+
+./assets/fonts:
+Px437_IBM_CGA.ttf
+Px437_TandyNew_225-2y.ttf
+Px437_TandyNew_TV-2y.ttf
+Px437_TandyNew_TV.ttf
+Px437_TandyOld_225.ttf
+Px437_TandyOld_TV-2y.ttf
+Px437_VGA_SquarePx.ttf
+
+./assets/hud:
+1-1.png
+1HEART.png
+1HP.png
+2-1.png
+2HP.png
+2LIFE-1.png
+3HP.png
+3LIFE-1.png
+4HP.png
+4LIFE-1.png
+5HP.png
+5LIFE-1.png
+6HP.png
+7HP.png
+8HO.png
+ENEMY1HP.png
+ENEMY2HP.png
+ENEMY3HP.png
+ENEMY4HP.png
+ENEMY5HP.png
+ENEMY6HP.png
+ENEMY7HP.png
+ENEMY8HP.png
+
+./assets/inventory:
+ARROW DOWN.png
+ARROW LEFT.png
+ARROW LIGHT DOWN.png
+ARROW LIGHT LEFT.png
+ARROW LIGHT RIGHT.png
+ARROW LIGHT UP.png
+ARROW RIGHT.png
+ARROW UP.png
+BIG KEY.png
+BOMBS-1.png
+BOMBS.png
+BOW DOWN.png
+BOW LEFT.png
+BOW RIGHT.png
+BOW UP.png
+CHROMAC KEY.png
+CONTAINER-1.png
+DOWN-1.png
+GAUNTLET-1.png
+ICICLE-1.png
+LADDER-1.png
+LANTERN-1.png
+METALSWORD-1.png
+METALSWORD.png
+MUSICNOTE-1.png
+NewObject-1-8.png
+PLASMASWORD.png
+RAFT-1-0.png
+RAFT-1.png
+SLAZER.png
+SMALL KEY.png
+UP-1.png
+WOODSWORD-1.png
+
+./assets/Inventory:
+inventory.js
+inventorytools.js
+
+./assets/main_menu:
+gallery
+jukebox
+
+./assets/main_menu/gallery:
+[000532].jpg
+[000534].jpg
+[000535].jpg
+007 1.jpg
+[008438].jpg
+10.jpg
+11.jpg
+12.jpg
+13.jpg
+14.jpg
+15.jpg
+16.jpg
+17.jpg
+18.jpg
+19.jpg
+1.jpg
+21.jpg
+22.jpg
+23.jpg
+24.jpg
+25.jpg
+26.jpg
+27.jpg
+28.jpg
+29.jpg
+2.jpg
+30.jpg
+31.jpg
+32.jpg
+33.jpg
+34.jpg
+35.jpg
+36.jpg
+37.jpg
+38.jpg
+39.jpg
+3D Special Cycle Front.jpg
+3D Special Cycle Right.jpg
+3.jpg
+40.jpg
+41.jpg
+42.jpg
+43.jpg
+44.jpg
+45.jpg
+46.jpg
+47.jpg
+48.jpg
+49.jpg
+4.jpg
+5.jpg
+6.jpg
+7.jpg
+8.jpg
+9.jpg
+BC 1_1.jpg
+BOMB EXPLODE.jpg
+CLOCKWORX ARTS 1_1.jpg
+convert_png_to_jpg.py
+CPUNK 1_10.jpg
+CPUNK 1_1.jpg
+CPUNK 1_2.jpg
+CPUNK 1_3.jpg
+CPUNK 1_4.jpg
+CPUNK 1_5.jpg
+CPUNK 1_6.jpg
+CPUNK 1_7.jpg
+CPUNK 1_8.jpg
+FAIR TAIL 1_1.jpg
+FIGHT 1_1.jpg
+FIGHT 1_2.jpg
+FIGHT 1_3.jpg
+gallery.html
+GOTHAM 1_1.jpg
+GUN CONCEPT 1_1.jpg
+MagicianTrix Arts 2020 Logo.jpg
+NEOTOKYO SHOPPING.jpg
+SEASONS OF TIME 1_1.jpg
+SEASONS OF TIME 1_2.jpg
+SONIC 1_1.jpg
+STAR OCEAN 1_1.jpg
+STEAMPUNK MAID.jpg
+tumblr_nkxn3dKRUJ1sl0rr2o7_500_3.jpg
+TUROK_VR.jpg
+UV Dancer.jpg
+Vintage Computer Cover 2.jpg
+WEOWNTHENIGHT.jpg
+
+./assets/main_menu/jukebox:
+convert_png_to_jpg.py
+Juke 12.jpg
+Juke 1.jpg
+Juke 2.jpg
+Juke 3.jpg
+Juke 4.jpg
+jukebox.html
+Juke Entrance.jpg
+Lunar CD Player.jpg
+
+./assets/maps:
+D1
+D2
+D3
+D4
+D5
+D6
+D7
+main
+room1
+room1_v2.map
+temp_playtest.map
+
+./assets/maps/D1:
+D1B.png
+D1.map
+D1.png
+D1.txt
+
+./assets/maps/D2:
+D2B.png
+D2.map
+D2.png
+D2.txt
+
+./assets/maps/D3:
+D3B.png
+D3.map
+D3.png
+D3.txt
+
+./assets/maps/D4:
+D4GUIDE.png
+D4.map
+
+./assets/maps/D5:
+D5GUIDE.png
+D5.map
+
+./assets/maps/D6:
+D6GUIDE.png
+D6.map
+
+./assets/maps/D7:
+D7GUIDE.png
+D7.map
+
+./assets/maps/main:
+main.map
+main.png
+OVERWORLD MAP.png
+
+./assets/maps/room1:
+create3DTextPlane.js
+room1.map
+room1.png
+room1_v2.map
+TextBoardLoader.js
+
+./assets/misc:
+
+./assets/npc:
+OLDMAN1-1.png
+
+./assets/overworld:
+BOULDER-1-0.png
+BOULDER-1.png
+CRACKEDWALL-1.png
+OVERWORLD GROUND.jpg
+OVERWORLD MAP.png
+OVERWORLD OBJECTS.png
+OVERWORLD_WALLS.png
+TREE1-1.png
+
+./assets/particles:
+BOMB EXPLODE.png
+EXPLODE-1.png
+FIREBALL-1.png
+LAZER-1-0.png
+LAZER-2.png
+LAZER-3.png
+LAZERLEFT-1.png
+LAZERLEFT (1).png
+LAZERLEFT-2.png
+LAZERLEFT (2).png
+LAZERLEFT-3.png
+LAZERLEFT (3).png
+LAZERRIGHT (1).png
+LAZERRIGHT (2).png
+LAZERRIGHT (3).png
+LAZERUP-1.png
+LAZERUP (1).png
+LAZERUP-2.png
+LAZERUP (2).png
+LAZERUP-3.png
+LAZERUP (3).png
+LEFT-1.png
+RIGHT-1.png
+
+./assets/player:
+SWORDDOWN-1.png
+SWORDLEFT-1.png
+SWORDLEFT.png
+SWORDRIGHT.png
+SWORDUP-1.png
+SWORDUP.png
+VRMANBACK-1.png
+VRMANBACK.png
+VRMANL.png
+VRMANR-1.png
+VRMANR.png
+
+./assets/player2:
+pl2down.png
+pl2left.png
+pl2right.png
+pl2up.png
+
+./assets/player3:
+pl3left.png
+pl3right.png
+
+./assets/player_animations_events:
+BIGKEY-1.png
+BIGKEY-2.png
+BIGKEY.png
+BOMBS-12.png
+BOMBS-2.png
+BOMBS2.png
+BOMBTOSS-1.png
+BOMBTOSS-2.png
+BOWDOWN.png
+BOWLEFT.png
+BOWRIGHT.png
+BOWUP-1.png
+BOWUP.png
+CHROMACKEY-1.png
+CHROMACKEY-2.png
+CHROMACKEY.png
+GAUNTLET-12.png
+GAUNTLET-2.png
+GAUNTLET.png
+GET RAFT.png
+GETSWORD1.png
+GETSWORD2.png
+GETSWORD3.png
+HEART.png
+HOLDINGBOMB-1.png
+HOLDINGBOMB.png
+ICEBOW1.png
+ICEBOW.png
+LADDER.png
+LANTERN HOLD.png
+LAZER.png
+PIECE.png
+RAFTDOWN.png
+RAFTLEFT.png
+RAFTRIGHT.png
+RAFTUP.png
+SMALLKEY-12.png
+SMALLKEY-2.png
+SMALLKEY.png
+SWORDDOWN-1.png
+SWORDLEFT-1.png
+SWORDLEFT.png
+SWORDRIGHT.png
+SWORDUP-1.png
+SWORDUP.png
+VRMANBACK-1.png
+VRMANBACK.png
+VRMANL.png
+VRMANR-1.png
+
+./assets/secret_factory:
+CHROMAC-1.png
+CHROMAC FORM 2.png
+CHROMAC FORM 3.png
+SECRET FACTORY 2.jpg
+SECRET_FACTORY_INVERTED.jpg
+SECRET FACTORY.jpg
+
+./assets/start:
+BEGINNING FLOOR.jpg
+BEGINNING.png
+
+./assets/storage:
+bigchestclosed.png
+smallchestclosed.png
+
+./assets/story:
+DEMO 1 END.jpg
+TITLE SCREEN.jpg
+
+./assets/textures:
+bark1.jpg
+bark2.jpg
+dirt1.jpg
+glass1.jpg
+glass2.jpg
+grass1.jpg
+housewall1.jpg
+housewall2.jpg
+housewall3.jpg
+ladder1.jpg
+magma1.jpg
+metal1.jpg
+metal2.jpg
+metal3.jpg
+planks1.jpg
+raft1.jpg
+raft2.jpg
+rcok2.jpg
+rcok3.jpg
+rock1.jpg
+rock2.jpg
+rock3.jpg
+rock4.jpg
+rock5.jpg
+roof2.jpg
+roof3.jpg
+rooff1.jpg
+sand1.jpg
+sand2.jpg
+sand3.jpg
+sand4.jpg
+skybox
+stone1.jpg
+stone2.jpg
+stone3.jpg
+stone4.jpg
+water1.jpg
+
+./assets/textures/skybox:
+day1.jpg
+day2.jpg
+day3.jpg
+day4.jpg
+day5.jpg
+night1.jpg
+night2.jpg
+night3.jpg
+night4.jpg
+overcast1.jpg
+overcast2.jpg
+overcast3.jpg
+stomry1.jpg
+
+./assets/ui:
+3D HUD.png
+BOSSHP (1).png
+BOSSHP (2).png
+BOSSHP (3).png
+BOSSHP (4).png
+BOSSHP (5).png
+BOSSHP (6).png
+BOSSHP (7).png
+BOSSHP (8).png
+INVENTORY SCREEN.jpg
+PAUSE SCREEN.jpg
+
+./assets/weapons:
+bomb.png
+bow.png
+sword1.png
+sword2.png
+sword3.png
+
+./DestroyOutsideBehavior:
+destroyoutsideruntimebehavior.js
+
+./logs:
+CLAUDE_SESSION_LOG.md
+GEMINI_SESSION_LOG.md
+NEONDROMEDA_V3_HANDOFF_README.md
+ROOMBUILDER_SPRITESYSTEM_V3_README.md
+
+./Physics2Behavior:
+box2d.js
+physics2runtimebehavior.js
+
+./src:
+engine
+
+./src/engine:
+Three_js_system
+
+./src/engine/Three_js_system:
+camera_controls_v3.js
+chroma_engine.js
+combat_system_v3.js
+heightmap_generator_v3.js
+interact_system_v3.js
+menu_system.js
+normalmap_generator_v3.js
+room_builder_v3.js
+rooms
+scoreboard_v3.js
+sprite_system_v3.js
+terrain_generator_v3.js
+
+./src/engine/Three_js_system/rooms:
+d1_room.js
+
+./TextObject:
+textruntimeobject.js
+textruntimeobject-pixi-renderer.js
+
+./TiledSpriteObject:
+tiledspriteruntimeobject.js
+tiledspriteruntimeobject-pixi-renderer.js
+
+./TopDownMovementBehavior:
+topdownmovementruntimebehavior.js

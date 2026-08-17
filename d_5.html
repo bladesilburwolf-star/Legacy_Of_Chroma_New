@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neondromeda - DUNGEON 5 // SUNKEN ABYSS SHRINE</title>
+    <link rel="stylesheet" href="ui_styles.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #00050a;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #sector-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00e1ff;
+            text-shadow: 0 0 8px #0088ff;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #sector-overlay h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+        #nav-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        #nav-hud a {
+            color: #00e1ff;
+            text-decoration: none;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 16px;
+            border: 1px solid #00e1ff;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        #nav-hud a:hover {
+            background: #00e1ff;
+            color: #000;
+        }
+    </style>
+
+    <!-- Three.js Dependency -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Engine System Dependencies -->
+    <script src="src/engine/Three_js_system/chroma_engine.js"></script>
+    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
+    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
+    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+</head>
+<body>
+
+    <div id="sector-overlay">
+        <h1>DUNGEON 5 // SUNKEN ABYSS SHRINE</h1>
+        <p>LOCATION: LAKE SUB-LEVEL</p>
+    </div>
+
+    <div id="nav-hud">
+        <a href="lake_sector.html">← LAKE SECTOR [ESC]</a>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('webgl-canvas');
+
+            // 1. Engine Setup (Aquatic Bioluminescent Theme)
+            const engine = new ChromaEngine({
+                canvas: canvas,
+                clearColor: 0x000814,
+                fogColor: 0x001d3d,
+                fogDensity: 0.02
+            });
+
+            // 2. Camera Controls
+            const cameraController = new CameraControlsV3(engine.camera, engine.renderer.domElement, {
+                moveSpeed: 8.0,
+                lookSpeed: 0.002,
+                heightOffset: 1.8
+            });
+
+            // 3. Bioluminescent Underwater Lighting
+            const ambientLight = new THREE.AmbientLight(0x0077b6, 0.4);
+            engine.scene.add(ambientLight);
+
+            const crystalGlow = new THREE.PointLight(0x00f5d4, 2.0, 40);
+            crystalGlow.position.set(0, 6, 0);
+            engine.scene.add(crystalGlow);
+
+            // 4. Chamber Construction (Using Stone & Moss Textures)
+            const textureLoader = new THREE.TextureLoader();
+            const wallTexture  = textureLoader.load('assets/textures/stone1.jpg');
+            const floorTexture = textureLoader.load('assets/textures/stone4.jpg');
+
+            wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+            wallTexture.repeat.set(4, 2);
+
+            floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+            floorTexture.repeat.set(8, 8);
+
+            const roomBuilder = new RoomBuilderV3(engine.scene);
+            roomBuilder.buildDungeonChamber({
+                width: 64,
+                depth: 64,
+                height: 9,
+                wallMaterial: new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5, metalness: 0.2 }),
+                floorMaterial: new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.6 })
+            });
+
+            // 5. Entities & Combat Setup
+            const collisionSystem = new CollisionSystemV3();
+            const combatSystem    = new CombatSystemV3(engine.scene);
+            const spriteSystem    = new SpriteSystemV3(engine.scene);
+            const hpBarSystem     = new HpBarSystemV3(engine.scene);
+
+            // Submerged Boss Key / Item Pickup
+            const itemSprite = spriteSystem.createSprite('assets/inventory/ICICLE-1.png', {
+                position: new THREE.Vector3(0, 1.2, -18),
+                scale: new THREE.Vector3(2.0, 2.0, 1)
+            });
+
+            // D5 Aquatic / Ghost Enemies
+            const d5Enemies = ['assets/enemies/GHOSTHARDL.png', 'assets/enemies/CYPAKL.png'];
+            for (let i = 0; i < 10; i++) {
+                const x = (Math.random() - 0.5) * 44;
+                const z = (Math.random() - 0.5) * 44;
+
+                const enemySprite = d5Enemies[Math.floor(Math.random() * d5Enemies.length)];
+                const enemy = spriteSystem.createEnemySprite(enemySprite, {
+                    position: new THREE.Vector3(x, 1.5, z),
+                    hp: 75,
+                    scale: new THREE.Vector3(2.5, 2.5, 1)
+                });
+                hpBarSystem.attachHpBar(enemy, 75);
+                combatSystem.registerEntity(enemy);
+            }
+
+            // 6. Loop
+            const clock = new ClockSystemV3();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const delta = clock.getDelta();
+                const time  = clock.getElapsedTime();
+
+                // Gentle pulsing blue/cyan aura
+                crystalGlow.intensity = 2.0 + Math.sin(time * 3) * 0.4;
+
+                cameraController.update(delta);
+                combatSystem.update(delta);
+                spriteSystem.update(engine.camera);
+                hpBarSystem.update(engine.camera);
+
+                engine.render();
+            }
+
+            animate();
+
+            // Return to Lake
+            window.addEventListener('keydown', e => {
+                if (e.code === 'Escape') location.href = 'lake_sector.html';
+            });
+        });
+    </script>
+</body>
+</html>

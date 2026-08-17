@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neondromeda - DUNGEON 4 // SANDSTONE CATACOMBS</title>
+    <link rel="stylesheet" href="ui_styles.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030200;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #sector-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ffaa00;
+            text-shadow: 0 0 8px #ff6600;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #sector-overlay h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+        #nav-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        #nav-hud a {
+            color: #ffaa00;
+            text-decoration: none;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 16px;
+            border: 1px solid #ffaa00;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        #nav-hud a:hover {
+            background: #ffaa00;
+            color: #000;
+        }
+    </style>
+
+    <!-- Three.js Dependency -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Engine System Dependencies -->
+    <script src="src/engine/Three_js_system/chroma_engine.js"></script>
+    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
+    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
+    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+</head>
+<body>
+
+    <div id="sector-overlay">
+        <h1>DUNGEON 4 // SANDSTONE CATACOMBS</h1>
+        <p>LOCATION: DESERT SUB-LEVEL</p>
+    </div>
+
+    <div id="nav-hud">
+        <a href="desert_sector.html">← DESERT SECTOR [ESC]</a>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('webgl-canvas');
+
+            // 1. Core Engine Initialization (Indoor Torchlit Ambient)
+            const engine = new ChromaEngine({
+                canvas: canvas,
+                clearColor: 0x0a0500,
+                fogColor: 0x1c0f00,
+                fogDensity: 0.025
+            });
+
+            // 2. Camera Controls
+            const cameraController = new CameraControlsV3(engine.camera, engine.renderer.domElement, {
+                moveSpeed: 8.0,
+                lookSpeed: 0.002,
+                heightOffset: 1.8
+            });
+
+            // 3. Torchlight Ambient Lighting Setup
+            const ambientLight = new THREE.AmbientLight(0xffaa44, 0.25);
+            engine.scene.add(ambientLight);
+
+            const torchLight = new THREE.PointLight(0xff7700, 1.5, 30);
+            torchLight.position.set(0, 4, 0);
+            engine.scene.add(torchLight);
+
+            // 4. Room & Dungeon Architecture (Using D4 Guide Map and Textures)
+            const textureLoader = new THREE.TextureLoader();
+            const wallTexture = textureLoader.load('assets/textures/stone3.jpg');
+            const floorTexture = textureLoader.load('assets/textures/sand3.jpg');
+
+            wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+            wallTexture.repeat.set(4, 2);
+
+            floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+            floorTexture.repeat.set(8, 8);
+
+            const roomBuilder = new RoomBuilderV3(engine.scene);
+            roomBuilder.buildDungeonChamber({
+                width: 60,
+                depth: 60,
+                height: 8,
+                wallMaterial: new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.8 }),
+                floorMaterial: new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.9 })
+            });
+
+            // 5. Entities, Collision & Combat
+            const collisionSystem = new CollisionSystemV3();
+            const combatSystem    = new CombatSystemV3(engine.scene);
+            const spriteSystem    = new SpriteSystemV3(engine.scene);
+            const hpBarSystem     = new HpBarSystemV3(engine.scene);
+
+            // Dungeon Chest
+            const chest = spriteSystem.createSprite('assets/chests/BIGCHEST-1.png', {
+                position: new THREE.Vector3(0, 1.2, -20),
+                scale: new THREE.Vector3(2.5, 2.5, 1)
+            });
+            collisionSystem.addStaticObstacle(0, -20, 1.5);
+
+            // D4 Enemies (Hard Knights & Neon Skulls)
+            const d4Enemies = ['assets/enemies/KNIGHTHARDLEFT.png', 'assets/enemies/NEONSKULLHARD.png'];
+            for (let i = 0; i < 8; i++) {
+                const x = (Math.random() - 0.5) * 40;
+                const z = (Math.random() - 0.5) * 40;
+
+                const enemySprite = d4Enemies[Math.floor(Math.random() * d4Enemies.length)];
+                const enemy = spriteSystem.createEnemySprite(enemySprite, {
+                    position: new THREE.Vector3(x, 1.5, z),
+                    hp: 60,
+                    scale: new THREE.Vector3(2.5, 2.5, 1)
+                });
+                hpBarSystem.attachHpBar(enemy, 60);
+                combatSystem.registerEntity(enemy);
+            }
+
+            // 6. Loop
+            const clock = new ClockSystemV3();
+            
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const delta = clock.getDelta();
+                const time  = clock.getElapsedTime();
+
+                // Torch flicker effect
+                torchLight.intensity = 1.5 + Math.sin(time * 10) * 0.15;
+
+                cameraController.update(delta);
+                combatSystem.update(delta);
+                spriteSystem.update(engine.camera);
+                hpBarSystem.update(engine.camera);
+
+                engine.render();
+            }
+
+            animate();
+
+            // Return to Desert
+            window.addEventListener('keydown', e => {
+                if (e.code === 'Escape') location.href = 'desert_sector.html';
+            });
+        });
+    </script>
+</body>
+</html>

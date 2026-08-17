@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neondromeda - SOUTH // FOREST EDGE / BEACH</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{overflow:hidden;background:#000;color:#00ff66;font-family:monospace}
+        #canvas-container{width:100vw;height:100vh}
+        #status{position:absolute;left:18px;bottom:18px;color:#88cc99;background:rgba(0,0,0,0.6);padding:6px 10px;border:1px solid #006644}
+        a.hint{position:absolute;top:18px;left:18px;color:#88ffaa;text-decoration:none;padding:6px 10px;border:1px solid #004422;background:rgba(0,0,0,0.5)}
+        /* Tomb/glitch overlays */
+        #glitch-overlay{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity 200ms linear}
+        #glitch-overlay.active{opacity:1}
+        #glitch-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);mix-blend-mode:screen;filter:contrast(1.2) brightness(1.1) saturate(1.2);}
+        #glitch-bars{position:absolute;inset:0;background:linear-gradient(90deg, rgba(255,0,85,0.06), rgba(0,255,170,0.03));mix-blend-mode:overlay;animation:glitch-shift 420ms steps(2) 0s 6}
+        @keyframes glitch-shift{0%{transform:translateX(0)}50%{transform:translateX(8px)}100%{transform:translateX(0)}}
+        #tomb-message{position:fixed;left:50%;top:22%;transform:translateX(-50%);padding:12px 18px;border:2px solid #ff3366;background:rgba(0,0,0,0.7);color:#ffccd9;font-family:monospace;font-size:18px;letter-spacing:0.12em;text-shadow:0 0 8px #ff3366;display:none;z-index:999}
+    </style>
+</head>
+<body>
+    <a class="hint" href="index.html">← CENTRAL SECTOR</a>
+    <div id="canvas-container"></div>
+    <div id="status">Loading South Sector...</div>
+    <div id="glitch-overlay"><div id="glitch-scan"></div><div id="glitch-bars"></div></div>
+    <div id="tomb-message">DO NOT ENTER WITHOUT HOOKSHOT</div>
+
+    <!-- Engine scripts (same as index for compatibility) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
+    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/heightmap_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/normalmap_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/terrain_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/paint_terrain.js"></script>
+    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+    <script src="src/engine/Three_js_system/skybox_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/night_spawn_v3.js"></script>
+    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/menu_system.js"></script>
+    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
+    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
+
+    <script>
+    (function () {
+        const container = document.getElementById('canvas-container');
+        const statusEl  = document.getElementById('status');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87a0c0);
+        scene.fog = new THREE.FogExp2(0x87a0c0, 0.0006);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 12000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const loader = new THREE.TextureLoader();
+        function prep(tex){ tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; return tex; }
+
+        // SOUTH SECTOR — Forest Edge / Beach
+        const ZONE_L = 2200; // length (Z)
+        const ZONE_W = 1600; // width  (X)
+
+        // Skybox
+        const sky = SkyboxSystemV3.create(scene, {
+            radius: Math.max(ZONE_L, ZONE_W) * 1.2,
+            cycleMinutes: 6,
+            startHour: 14,
+            loader: loader,
+            dayFog: 0x87a0c0,
+            nightFog: 0x02030a
+        });
+        sky.whenReady().then(()=>{ statusEl.textContent = 'Sky ready'; });
+
+        const clock = ClockSystemV3.create({ parent: document.body, x: 35, y: 40, hour: 14 });
+
+        // Terrain
+        const TERRAIN_RES = 80;
+        const hm = HeightmapGeneratorV3.create({ resolution: TERRAIN_RES, seed: 42 });
+        hm.fbm({ scale: 2.2, octaves: 4 });
+        // flatten shore near +Z edge
+        hm.flattenCircle(0.5, 0.88, 0.28, 0.02);
+        // subtle smoothing/raise to blend beach into terrain
+        hm.brush(0.5, 0.92, 0.18, -0.02);
+        const heights = hm.getFloats();
+        const nrmBake = NormalmapGeneratorV3.fromHeightmap(hm, { strength: 2.0 });
+
+        const terrain = TerrainGeneratorV3.createFromHeights(scene, heights, {
+            resolution: TERRAIN_RES,
+            sizeX: ZONE_W,
+            sizeZ: ZONE_L,
+            maxHeight: 60,
+            floorY: RoomBuilderV3.FLOOR_Y
+        });
+
+        // Paint vertex colors using PaintTerrainV3 (if available)
+        try {
+            if (typeof PaintTerrainV3 !== 'undefined') {
+                const painter = PaintTerrainV3.create({ resolution: TERRAIN_RES, bands: TerrainGeneratorV3.DEFAULTS.bands });
+                painter.autoPaintFromHeights(heights, { slopeInfluence: 0.9 });
+
+                // Biome blending: nudge colors toward lake on eastern side and desert on western side
+                // painter.paintBrush expects UV coords in 0..1 (u = (x/sizeX)+0.5, v = (z/sizeZ)+0.5)
+                const sizeX = ZONE_W, sizeZ = ZONE_L;
+                const lakeWorldX = sizeX * 0.35; // east-biome center
+                const desertWorldX = -sizeX * 0.45; // west-biome center
+                const lakeCX = (lakeWorldX / sizeX) + 0.5; // ~0.85
+                const desertCX = (desertWorldX / sizeX) + 0.5; // ~0.05
+                const centerCZ = 0.5; // blend across Z centerline
+
+                // lake: bluish wet sand/grass tint
+                painter.paintBrush(lakeCX, centerCZ, 0.18, [0.18,0.36,0.55], 0.85);
+                // desert: warm sand tint
+                painter.paintBrush(desertCX, centerCZ, 0.20, [0.76,0.69,0.45], 0.9);
+
+                // Stone ring around future tomb location to visually separate the structure
+                const tombWorldZ = -ZONE_L * 0.12;
+                const tombUV = { u: (0 / sizeX) + 0.5, v: (tombWorldZ / sizeZ) + 0.5 };
+                painter.paintBrush(tombUV.u, tombUV.v, 0.14, [0.18,0.18,0.16], 0.98);
+
+                painter.applyToMesh(terrain.mesh);
+                statusEl.textContent = 'Terrain painted & biomes blended';
+            }
+        } catch (e) { console.warn('paint terrain failed', e); }
+
+        // Sand/grass blend (texture used as base albedo)
+        const sandTex = prep(loader.load('assets/textures/grass1.jpg', ()=>{ statusEl.textContent = 'Ground texture loaded'; }, null, ()=>{ statusEl.textContent='Ground texture missing'; }));
+        sandTex.wrapS = THREE.RepeatWrapping; sandTex.wrapT = THREE.RepeatWrapping;
+        sandTex.repeat.set(ZONE_W / 160, ZONE_L / 160);
+
+        try {
+            const normalTex = nrmBake.toTexture();
+            const mat = new THREE.MeshStandardMaterial({ map: sandTex, normalMap: normalTex, normalScale: new THREE.Vector2(1.0,1.0), vertexColors:true, roughness:0.95, metalness:0.02 });
+            if (terrain && terrain.mesh) { terrain.mesh.material.dispose(); terrain.mesh.material = mat; }
+        } catch (e) { console.warn('normal bake failed', e); }
+
+        // Sunlight + ambient
+        const sun = new THREE.DirectionalLight(0xfff1d6, 0.9); sun.position.set(180, 360, 140); sun.name = 'terrain-sun'; scene.add(sun);
+        scene.add(new THREE.AmbientLight(0x88aa99, 0.45));
+
+        // Simple water plane at far +Z (beach / sea)
+        const waterZ = ZONE_L * 0.48;
+        const waterGeom = new THREE.PlaneGeometry(ZONE_W * 1.2, ZONE_L * 0.4, 1, 1);
+        const waterMat = new THREE.MeshPhongMaterial({ color: 0x2a6fb8, transparent:true, opacity:0.9, shininess:50 });
+        const water = new THREE.Mesh(waterGeom, waterMat);
+        water.rotation.x = -Math.PI / 2;
+        water.position.set(0, RoomBuilderV3.FLOOR_Y + 1.0, waterZ - ZONE_L*0.2);
+        water.receiveShadow = true;
+        scene.add(water);
+
+        // Room features: tomb complex (Daggerfall style) with steps and entrance
+        const S = RoomBuilderV3.shape;
+        const caveZ = -ZONE_L * 0.12;
+        const tombWidth = 260;
+        const tombDepth = 180;
+        const tombHeight = 140;
+        const tombCenterY = tombHeight * 0.5; // visual center in world units
+
+        // Tomb geometry: floor, four walls, roof, and front steps
+        const shapes = [
+            // tomb base/floor
+            S({ id:'tomb_floor', layer:'L3', geo:'Cube', scale:{x:tombWidth+24,y:10,z:tombDepth+24}, position:{x:0,y:5,z:caveZ}, color:'#0f0f0f', solid:true }),
+            // north wall (back)
+            S({ id:'tomb_wall_n', layer:'L2', geo:'Cube', scale:{x:tombWidth,y:tombHeight,z:14}, position:{x:0,y:tombCenterY,z:caveZ - tombDepth/2 + 7}, color:'#262626', solid:true }),
+            // south wall (front) with door gap — place solid and overlay door prop
+            S({ id:'tomb_wall_s', layer:'L2', geo:'Cube', scale:{x:tombWidth,y:tombHeight - 10,z:14}, position:{x:0,y:tombCenterY,z:caveZ + tombDepth/2 - 7}, color:'#262626', solid:true }),
+            // west wall
+            S({ id:'tomb_wall_w', layer:'L2', geo:'Cube', scale:{x:14,y:tombHeight,z:tombDepth}, position:{x:-tombWidth/2 + 7,y:tombCenterY,z:caveZ}, color:'#262626', solid:true }),
+            // east wall
+            S({ id:'tomb_wall_e', layer:'L2', geo:'Cube', scale:{x:14,y:tombHeight,z:tombDepth}, position:{x:tombWidth/2 - 7,y:tombCenterY,z:caveZ}, color:'#262626', solid:true }),
+            // roof
+            S({ id:'tomb_roof', layer:'L2', geo:'Cube', scale:{x:tombWidth+8,y:24,z:tombDepth+8}, position:{x:0,y:tombCenterY + tombHeight/2 - 12,z:caveZ}, color:'#151411', solid:true }),
+            // front steps (three stepped platforms)
+            S({ id:'steps_1', layer:'L3', geo:'Cube', scale:{x:120,y:8,z:30}, position:{x:0,y:8,z:caveZ + tombDepth/2 + 18}, color:'#1c1c1c', solid:true }),
+            S({ id:'steps_2', layer:'L3', geo:'Cube', scale:{x:96,y:8,z:22}, position:{x:0,y:16,z:caveZ + tombDepth/2 + 40}, color:'#171717', solid:true }),
+            S({ id:'steps_3', layer:'L3', geo:'Cube', scale:{x:72,y:8,z:12}, position:{x:0,y:24,z:caveZ + tombDepth/2 + 58}, color:'#121212', solid:true })
+        ];
+        const room = RoomBuilderV3.build(scene, shapes, { layerZ:{L1:-80,L2:-20,L3:0,L4:40,UI:100} });
+
+        // Door prop overlay (texture) placed in the front center — interactive
+        (function createTombDoor(){
+            // door texture exists in assets/dungeons/LOCKEDDOOR-1.png
+            const door = addProp('assets/dungeons/LOCKEDDOOR-1.png', 0, caveZ - tombDepth/2 + 9, 72, 110);
+            // Interaction: requires hookshot in inventory to enter
+            door.userData.onInteract = function(){
+                const hasHook = (inventory && inventory.list && inventory.list().indexOf && inventory.list().indexOf('hookshot') !== -1);
+                if (hasHook) {
+                    window.location.href = 'd_6.html';
+                } else {
+                    // trigger tomb event (ghosts + message)
+                    triggerTombEvent();
+                }
+            };
+            door.userData.collidable = true; door.userData.static = true; door.userData.radius = 42;
+        })();
+
+        // Decorative monoliths framing the tomb entrance (small)
+        const monLeft = S({ id:'m_left', layer:'L2', geo:'Cube', scale:{x:28,y:140,z:20}, position:{x:-tombWidth*0.45,y:70,z:caveZ + tombDepth/2 - 16}, color:'#2b2b2b', solid:true });
+        const monRight = S({ id:'m_right', layer:'L2', geo:'Cube', scale:{x:28,y:140,z:20}, position:{x:tombWidth*0.45,y:70,z:caveZ + tombDepth/2 - 16}, color:'#2b2b2b', solid:true });
+        // attach to room (RoomBuilder will manage these if passed through build); add to scene for safety
+        scene.add(monLeft); scene.add(monRight);
+
+        // small beach rocks remain
+        const overworldRocks = [
+            S({ id:'p_rock1', layer:'L2', geo:'Cube', scale:{x:28,y:22,z:36}, sizeZ:36, position:{x:-120,y:12,z:waterZ-60}, color:'#2b2b2b', solid:true }),
+            S({ id:'p_rock2', layer:'L2', geo:'Cube', scale:{x:18,y:16,z:22}, sizeZ:22, position:{x:90,y:10,z:waterZ-40}, color:'#2e2d2d', solid:true })
+        ];
+
+        // Add cave sign fallback near steps
+        (function createCaveSign(){
+            const sign = addProp('assets/overworld/CAVE_SIGN.png' , 0, caveZ + tombDepth/2 + 80, 64, 32);
+            sign.userData.onInteract = function(){ triggerTombEvent(); };
+            sign.userData.radius = 42; sign.userData.static = true; sign.userData.collidable = true;
+        })();
+
+        // Props: trees along southern inland edge
+        function addProp(path,x,z,w,h){
+            const mat = new THREE.MeshBasicMaterial({ map: prep(loader.load(path)), transparent:true, side:THREE.DoubleSide });
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat);
+            m.position.set(x, RoomBuilderV3.FLOOR_Y + h*0.45, z);
+            m.userData.isProp = true; scene.add(m);
+            // make collidable via SpriteSystem helper so CollisionSystem can use it
+            if (typeof SpriteSystemV3 !== 'undefined' && SpriteSystemV3.makeCollidable) {
+                SpriteSystemV3.makeCollidable(m, { radius: (w * 0.45), static: true, height: h });
+            } else {
+                m.userData.collidable = true; m.userData.static = true; m.userData.radius = (w * 0.45); m.userData.height = h;
+            }
+            return m;
+        }
+        const overworldProps = [];
+        const treeSpots = [[-380,600],[-200,720],[80,680],[320,760],[-600,420],[520,480]];
+        treeSpots.forEach(([x,z])=> overworldProps.push(addProp('assets/overworld/TREE1-1.png', x, z, 48, 56)));
+
+        // Player spawn
+        const player = SpriteSystemV3.createPlayer(loader, { position:{x:0,y:0,z: -ZONE_L*0.18}, layer:'L3' });
+        scene.add(player.mesh);
+        // set default collision radii on player
+        player.radius = player.width ? player.width * 0.45 : 18;
+
+        // Systems: camera, combat (movement+attack), hp bars, inventory, night spawn
+        const camCtrl = CameraControlsV3.create(camera, renderer.domElement, { distance: 170, height: 80, minDistance: 90, maxDistance: 320 });
+
+        const hpBars = HpBarSystemV3.create(scene, loader);
+        hpBars.attach(player.mesh, { type: 'player', max: 6, current: 6, offsetY: 52 });
+
+        const lanternLight = new THREE.PointLight(0xffcc66, 0, 280, 2);
+        lanternLight.position.set(0, 30, 0);
+        player.mesh.add(lanternLight);
+
+        const inventory = InventorySystemV3.create({ lanternLight: lanternLight, starter: ['woodsword', 'lantern', 'musicnote'], onSong: function(id){ statusEl.textContent = 'Ocarina: ' + id; }, onLantern: function(on){ statusEl.textContent = on ? 'Lantern ON' : 'Lantern OFF'; }, onUse: function(id, info){ if (id === 'heart' && info.heal) hpBars.heal(player.mesh, info.heal); } });
+        inventory.equip('woodsword');
+
+        const nightSpawn = NightSpawnV3.create({ scene: scene, loader: loader, player: player, enemyPaths: ['assets/enemies/SLIME-1-0.png','assets/enemies/GHOSTHARDL.png','assets/enemies/GHOSTHARDR.png','assets/enemies/NEONSKULL-1.png','assets/enemies/BOOEY-1-0.png'], getHour: () => sky.getHour(), getHeight: (x, z) => terrain ? terrain.getHeight(x, z) : RoomBuilderV3.FLOOR_Y, maxAlive:7, spawnInterval:4.0, radiusMin: 120, radiusMax: 480 });
+
+        const activeEnemies = [];
+
+        const combat = CombatSystemV3.create(scene, loader, player, {
+            maxHealth: 6,
+            onDamage: function(hp, max){ statusEl.textContent = 'HP: ' + hp + '/' + max; hpBars.set(player.mesh, hp); },
+            onDeath: function(){ statusEl.textContent = 'PLAYER DEAD'; }
+        });
+
+        // Collision system
+        const collision = CollisionSystemV3.create();
+
+        // Keyboard
+        const keys = { w:false,a:false,s:false,d:false, attack:false };
+        window.addEventListener('keydown', function(ev){ if (ev.repeat) return; const k = ev.key.toLowerCase(); if (k in keys) keys[k]=true; if (k==='q') inventory.use(); if (k==='e'){ /* cycle equipped */ const tools = inventory.list().filter(id=>{ const d = InventorySystemV3.CATALOG[id]; return d && (d.slot==='tool' || d.slot==='weapon');}); if (!tools.length) return; const cur = inventory.getEquipped(); const idx = Math.max(0, tools.indexOf(cur)); inventory.equip(tools[(idx+1)%tools.length]); statusEl.textContent = 'Equipped: ' + inventory.getEquipped(); } if (k==='1') inventory.equip('woodsword'); if (k==='2'){ inventory.equip('lantern'); inventory.use('lantern'); } if (k==='3'){ inventory.equip('musicnote'); inventory.use('musicnote'); } if (k==='f' || k==='escape'){ const el = document.getElementById('pause-overlay'); if (el.style.display==='block') closeAllOverlays(); else openInventory(); } if (k===' ') keys.attack = true; });
+        window.addEventListener('keyup', function(ev){ const k = ev.key.toLowerCase(); if (k in keys) keys[k]=false; if (k===' ') keys.attack = false; });
+
+        // Simple spawn helper
+        window.spawnEnemy = function(tex,x,z){ const e = SpriteSystemV3.createEnemy(tex, loader, { position:{ x:x||(Math.random()-0.5)*300, y:0, z:z||(-50-Math.random()*150) }, width:40, height:40, layer:'L3' }); // set collision defaults
+            e.radius = e.width ? e.width * 0.45 : 18; e.height = e.height || 40; scene.add(e.mesh); activeEnemies.push(e); hpBars.attach(e.mesh, { type:'enemy', max:3, current:3, offsetY:42 }); };
+
+        // place default enemy
+        spawnEnemy('assets/enemies/SLIME-1-0.png', 40, -80);
+
+        // Tomb proximity / ghost event helpers
+        const tombPos = { x: 0, z: caveZ };
+        let tombTriggered = false;
+        const activeGhosts = [];
+
+        function triggerTombEvent() {
+            if (tombTriggered) return; tombTriggered = true;
+            // show glitch overlay briefly
+            const g = document.getElementById('glitch-overlay');
+            const msg = document.getElementById('tomb-message');
+            if (g) { g.classList.add('active'); setTimeout(()=>g.classList.remove('active'), 1400); }
+            if (msg) { msg.style.display = 'block'; setTimeout(()=>{ msg.style.display = 'none'; }, 2200); }
+
+            // spawn several ephemeral ghost sprites around player
+            const ghostPaths = ['assets/enemies/GHOSTHARDL.png','assets/enemies/GHOSTHARDR.png','assets/enemies/NEONSKULL-1.png','assets/enemies/BOOEY-1-0.png'];
+            for (let i=0;i<4;i++){
+                const ang = (i/4) * Math.PI * 2;
+                const dx = Math.cos(ang) * (60 + Math.random()*40);
+                const dz = Math.sin(ang) * (60 + Math.random()*40);
+                const tex = ghostPaths[i % ghostPaths.length];
+                const e = SpriteSystemV3.createEnemy(tex, loader, { position:{ x: player.mesh.position.x + dx, y:0, z: player.mesh.position.z + dz }, width:48, height:48, layer:'L3' });
+                e.mesh.material.transparent = true; e.mesh.material.opacity = 0.0; e.mesh.renderOrder = 999; scene.add(e.mesh);
+                e.spawnTime = performance.now(); e.lifetime = 2600; activeGhosts.push(e);
+                // optional attach hp bar briefly for visual anchor
+                hpBars.attach(e.mesh, { type:'enemy', max:1, current:1, offsetY:42 });
+            }
+        }
+
+        // Update loop
+        function animate(){
+            requestAnimationFrame(animate);
+            const dt = 1/60;
+            const now = performance.now();
+            // sky
+            if (sky){ sky.update(dt, { camera: camera, sun: scene.getObjectByName('terrain-sun'), ambient: scene.children.find(c=>c.isAmbientLight), fog: scene.fog, background: scene.background }); clock.setHour(sky.getHour()); }
+            // night spawns
+            if (nightSpawn){ nightSpawn.update(dt); nightSpawn.faceCamera(camera); // sync into activeEnemies array
+                nightSpawn.getEnemies().forEach(function(e){ if (activeEnemies.indexOf(e)===-1){ activeEnemies.push(e); hpBars.attach(e.mesh, { type:'enemy', max:3, current:3, offsetY:42 }); } }); }
+
+            // combat/movement
+            combat.update(dt, { w: keys.w, a: keys.a, s: keys.s, d: keys.d, attack: keys.attack }, room, activeEnemies, camCtrl.state.yaw);
+
+            // collision: snap and resolve overlaps (include props)
+            collision.update({ player: player, enemies: activeEnemies, room: room, terrain: terrain, props: overworldProps });
+
+            // camera
+            camCtrl.update(player.mesh.position);
+
+            // billboards
+            RoomBuilderV3.faceBillboards(room, camera);
+            if (overworldProps) overworldProps.forEach(m=>m.lookAt(camera.position.x, m.position.y, camera.position.z));
+            player.faceCamera(camera);
+            activeEnemies.forEach(e=>{ if (e.faceCamera) e.faceCamera(camera); });
+
+            // update ephemeral ghosts (fade + remove)
+            for (let i = activeGhosts.length - 1; i >= 0; i--) {
+                const g = activeGhosts[i];
+                const age = now - g.spawnTime;
+                const mat = g.mesh.material;
+                if (age < 120) {
+                    mat.opacity = Math.min(1, age / 120);
+                } else {
+                    mat.opacity = Math.max(0, 1 - ((age - 120) / (g.lifetime - 120)));
+                }
+                if (age >= g.lifetime) {
+                    // detach hpbar if present and remove
+                    try { hpBars.detach && hpBars.detach(g.mesh); } catch(e){}
+                    if (g.mesh.parent) g.mesh.parent.remove(g.mesh);
+                    activeGhosts.splice(i,1);
+                } else {
+                    // slowly float upward
+                    g.mesh.position.y += 0.08;
+                    if (g.faceCamera) g.faceCamera(camera);
+                }
+            }
+
+            // check tomb proximity and trigger once
+            try {
+                const dx = player.mesh.position.x - tombPos.x;
+                const dz = player.mesh.position.z - tombPos.z;
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                const triggerRadius = 140;
+                if (dist < triggerRadius && !tombTriggered) {
+                    triggerTombEvent();
+                }
+            } catch (e) { /* ignore if player not ready */ }
+
+            // update hp bars
+            hpBars.update(camera);
+
+            // status
+            statusEl.textContent = 'X:' + player.position.x.toFixed(0) + ' Z:' + player.position.z.toFixed(0) + ' | Enemies: ' + activeEnemies.length + ' | ' + clock.getPhase();
+
+            renderer.render(scene,camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        // Escape to central
+        window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') window.location.href = 'index.html'; });
+
+    })();
+    </script>
+</body>
+</html>

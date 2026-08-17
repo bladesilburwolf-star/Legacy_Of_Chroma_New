@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neondromeda - Central Sector (Open Zone)</title>
+    <style>
+        @font-face {
+            font-family: 'RetroCGA';
+            src: url('assets/fonts/Px437_IBM_CGA.ttf') format('truetype');
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            overflow: hidden;
+            background: #000;
+            color: #00ff66;
+            font-family: 'RetroCGA', monospace;
+        }
+        #canvas-container { width: 100vw; height: 100vh; }
+
+        #hud-frame {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 15;
+            object-fit: fill;
+        }
+
+        #hud {
+            position: absolute; top: 40px; left: 35px; z-index: 20;
+            background: rgba(0, 5, 2, 0.85); padding: 10px 14px;
+            border: 2px solid #00ff66;
+            box-shadow: 0 0 12px rgba(0, 255, 102, 0.4);
+            text-shadow: 0 0 5px #00ff66;
+            line-height: 1.4; max-width: 450px;
+            pointer-events: none;
+        }
+        #hud .title { font-size: 14px; letter-spacing: 0.1em; }
+        #hud .sub { font-size: 11px; color: #88ffaa; margin-top: 4px; }
+
+        #stage-select-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.92); z-index: 100;
+            flex-direction: column; justify-content: center; align-items: center;
+            border: 4px solid #ff0055;
+            box-shadow: inset 0 0 30px rgba(255, 0, 85, 0.5);
+        }
+        .stage-title {
+            font-size: 24px; color: #ff0055; text-shadow: 0 0 12px #ff0055;
+            margin-bottom: 25px; letter-spacing: 2px; text-align: center;
+        }
+        .stage-list {
+            display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 500px;
+        }
+        .stage-card {
+            background: rgba(20, 0, 10, 0.8); border: 2px solid #00ffaa;
+            padding: 15px 20px; color: #00ffaa; cursor: pointer;
+            text-shadow: 0 0 6px #00ffaa; font-family: 'RetroCGA', monospace;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s ease-in-out;
+        }
+        .stage-card:hover {
+            background: #00ffaa; color: #000; text-shadow: none;
+            box-shadow: 0 0 15px #00ffaa; transform: scale(1.03);
+        }
+        .close-hint {
+            margin-top: 30px; font-size: 12px; color: #ffff00; text-shadow: 0 0 5px #ffff00;
+        }
+
+        #status {
+            position: absolute; bottom: 18px; left: 35px; z-index: 20;
+            font-size: 11px; color: #66cc88;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 10px;
+            border: 1px solid #00ff6644;
+        }
+        .scanlines {
+            position: absolute; inset: 0; z-index: 10;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px, transparent 2px,
+                rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px
+            );
+            mix-blend-mode: multiply;
+        }
+    </style>
+</head>
+<body>
+    <img id="hud-frame" src="HUD.png" alt="HUD Frame" onerror="this.style.display='none'" />
+    <div id="canvas-container"></div>
+    <div class="scanlines"></div>
+
+    <div id="hud">
+        <div class="title">NEONDROMEDA // CENTRAL SECTOR</div>
+        <div class="sub" id="hud-sub">CONTROLS: WASD = MOVE PLAYER | F = INTERACT WITH SCREEN</div>
+    </div>
+
+
+    <div id="stage-select-overlay">
+        <div class="stage-title">[ SELECT DUNGEON TERMINAL ]</div>
+        <div class="stage-list">
+            <div class="stage-card" onclick="warpTo('road_1.html')">
+                <span>1. ROAD TO ARCADE 1 (WEST)</span>
+                <span>[KEY: 1]</span>
+            </div>
+            <div class="stage-card" onclick="warpTo('road_2.html')">
+                <span>2. ROAD TO ARCADE 2 (EAST)</span>
+                <span>[KEY: 2]</span>
+            </div>
+            <div class="stage-card" onclick="warpTo('secret_factory.html')">
+                <span>3. SECRET FACTORY (NORTH)</span>
+                <span>[KEY: 3]</span>
+            </div>
+            <div class="stage-card" onclick="warpTo('main_menu.html')">
+                <span>4. MAIN MENU / CYBERDECK (SOUTH)</span>
+                <span>[KEY: 4]</span>
+            </div>
+        </div>
+        <div class="close-hint">[ PRESS 'F' OR 'ESC' TO CANCEL ]</div>
+    </div>
+
+    <div id="status">Loading Hub...</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
+    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/terrain_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/heightmap_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/normalmap_generator_v3.js"></script>
+    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+
+    <script>
+    (function () {
+        const container = document.getElementById('canvas-container');
+        const statusEl  = document.getElementById('status');
+        const hudSub    = document.getElementById('hud-sub');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050508);
+        scene.fog = new THREE.FogExp2(0x050508, 0.0015);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const loader = new THREE.TextureLoader();
+
+        function prep(tex) {
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            tex.generateMipmaps = false;
+            return tex;
+        }
+
+        // ============================================================
+        // CENTRAL SECTOR — Sonic Open Zone style
+        // Zone size: L=500 (Z), W=256 (X), H=256 (Y volume)
+        // Not seamless open-world: edges warp to other zones.
+        // ============================================================
+        // Design intent was UE-style units (cm). Our Three.js rooms use
+        // ~1 unit ≈ gameplay stride (D1 is 960×720). Scale ×10 so the
+        // central Open Zone is a real overworld chunk, not a closet.
+        const ZONE_L = 5000;   // length (Z)  — was 500 UU
+        const ZONE_W = 2560;   // width  (X)  — was 256 UU
+        const ZONE_H = 2560;   // height budget
+
+        // Skybox sized to zone height envelope
+        const skyGeo = new THREE.SphereGeometry(Math.max(ZONE_L, ZONE_W) * 1.2, 48, 32);
+        skyGeo.scale(-1, 1, 1);
+        scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({
+            map: prep(loader.load('skybox_monochrome.jpg')),
+            side: THREE.DoubleSide
+        })));
+        scene.fog = new THREE.FogExp2(0x020204, 0.0015);
+
+        // ---- CE1 heightmap + normal bake, grass surface ----
+        let terrain = null;
+        const TERRAIN_RES = 96;
+        const hm = HeightmapGeneratorV3.create({ resolution: TERRAIN_RES, seed: 17 });
+        hm.fbm({ scale: 3.2, octaves: 5 });
+        // Flat plateau at center (slime / cave) and near terminal spawn
+        hm.flattenCircle(0.5, 0.5, 0.06, 0.04);
+        hm.flattenCircle(0.5, 0.28, 0.05, 0.03); // north terminal area (uv)
+        const heights = hm.getFloats();
+        const nrmBake = NormalmapGeneratorV3.fromHeightmap(hm, { strength: 2.4 });
+
+        terrain = TerrainGeneratorV3.createFromHeights(scene, heights, {
+            resolution: TERRAIN_RES,
+            sizeX: ZONE_W,
+            sizeZ: ZONE_L,
+            maxHeight: 90,
+            floorY: RoomBuilderV3.FLOOR_Y
+        });
+
+        // Grass albedo + baked normal
+        (function applyGrassAndNormal() {
+            const grass = prep(loader.load('assets/textures/grass1.jpg'));
+            grass.wrapS = THREE.RepeatWrapping;
+            grass.wrapT = THREE.RepeatWrapping;
+            grass.repeat.set(ZONE_W / 200, ZONE_L / 200);
+            const normalTex = nrmBake.toTexture();
+            // Upgrade material so normal map is visible
+            const mat = new THREE.MeshStandardMaterial({
+                map: grass,
+                normalMap: normalTex,
+                normalScale: new THREE.Vector2(1.2, 1.2),
+                vertexColors: true,
+                roughness: 0.92,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            });
+            terrain.mesh.material.dispose();
+            terrain.mesh.material = mat;
+            // Light so Standard material reads
+            if (!scene.getObjectByName('terrain-sun')) {
+                const sun = new THREE.DirectionalLight(0xfff5e0, 0.85);
+                sun.name = 'terrain-sun';
+                sun.position.set(200, 400, 150);
+                scene.add(sun);
+                scene.add(new THREE.AmbientLight(0x88aa77, 0.45));
+            }
+            statusEl.textContent = 'Terrain ready — grass + height + normal';
+        })();
+
+        // Chromac Terminal (north-central landmark)
+        const terminal = new THREE.Mesh(
+            new THREE.PlaneGeometry(140, 105),
+            new THREE.MeshBasicMaterial({
+                map: prep(loader.load('chromac.jpg')),
+                transparent: true,
+                side: THREE.DoubleSide
+            })
+        );
+        terminal.position.set(0, 25, -ZONE_L * 0.28);
+        scene.add(terminal);
+
+        // V3 structure — platforms + pillars across the zone
+        const S = RoomBuilderV3.shape;
+        const hubShapes = [
+            // Center platform
+            S({ id: 'center_pad', layer: 'L3', geo: 'Cube',
+                scale: {x: 90, y: 6, z: 90}, sizeZ: 90,
+                position: {x: 0, y: 3, z: 0}, color: '#0a1f14', alpha: 0.65, solid: true }),
+            // North approach pad under terminal
+            S({ id: 'north_pad', layer: 'L3', geo: 'Cube',
+                scale: {x: 70, y: 5, z: 50}, sizeZ: 50,
+                position: {x: 0, y: 2, z: -ZONE_L * 0.28}, color: '#0a1810', solid: true }),
+            // Corner pillars (inset from zone edges)
+            S({ id: 'p_ne', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 18, y: 80, z: 18}, sizeZ: 18,
+                position: {x:  ZONE_W * 0.35, y: 40, z: -ZONE_L * 0.32}, color: '#00cc66', solid: true }),
+            S({ id: 'p_nw', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 18, y: 80, z: 18}, sizeZ: 18,
+                position: {x: -ZONE_W * 0.35, y: 40, z: -ZONE_L * 0.32}, color: '#00cc66', solid: true }),
+            S({ id: 'p_se', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 18, y: 80, z: 18}, sizeZ: 18,
+                position: {x:  ZONE_W * 0.35, y: 40, z:  ZONE_L * 0.32}, color: '#00cc66', solid: true }),
+            S({ id: 'p_sw', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 18, y: 80, z: 18}, sizeZ: 18,
+                position: {x: -ZONE_W * 0.35, y: 40, z:  ZONE_L * 0.32}, color: '#00cc66', solid: true }),
+            // Mid-ring markers
+            S({ id: 'm_e', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 12, y: 50, z: 12}, sizeZ: 12,
+                position: {x:  ZONE_W * 0.38, y: 25, z: 0}, color: '#008848', solid: true }),
+            S({ id: 'm_w', layer: 'L2', geo: 'VCylinder',
+                scale: {x: 12, y: 50, z: 12}, sizeZ: 12,
+                position: {x: -ZONE_W * 0.38, y: 25, z: 0}, color: '#008848', solid: true }),
+        ];
+        const room = RoomBuilderV3.build(scene, hubShapes, {
+            layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+        });
+
+        // ---- Overworld props (MAIN map: central Forest / room1) ----
+        function addProp(path, x, z, w, h) {
+            const mat = new THREE.MeshBasicMaterial({
+                map: prep(loader.load(path)),
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: true
+            });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            mesh.position.set(x, RoomBuilderV3.FLOOR_Y + h * 0.45, z);
+            mesh.userData.isProp = true;
+            scene.add(mesh);
+            return mesh;
+        }
+        const overworldProps = [];
+        // Trees — south forest belt (MAIN map lower FOREST)
+        const treeSpots = [
+            [-400, 800], [-200, 900], [100, 850], [350, 950],
+            [-600, 500], [500, 550], [-300, 1200], [250, 1300],
+            [-700, 200], [650, 250], [-250, -300], [400, -400],
+            [-500, -800], [200, -900], [0, 600], [-100, -200],
+            [700, 0], [-800, 0], [100, 1500], [-150, 1600]
+        ];
+        treeSpots.forEach(([x, z]) => {
+            overworldProps.push(addProp('assets/overworld/TREE1-1.png', x, z, 48, 56));
+        });
+        // Boulders
+        [[-400, -700], [500, -600], [-150, 400], [300, 200], [-600, -200]].forEach(([x, z]) => {
+            overworldProps.push(addProp('assets/overworld/BOULDER-1.png', x, z, 36, 32));
+        });
+
+
+        // ---- Beginning Cave entrance (LoZ-style start, near center slime) ----
+        // Simple cave mouth: dark recess + stone frame cubes
+        (function placeCaveMouth() {
+            const S = RoomBuilderV3.shape;
+            const caveShapes = [
+                S({ id: 'cave_l', layer: 'L2', geo: 'Cube',
+                    scale: {x: 18, y: 55, z: 22}, sizeZ: 22,
+                    position: {x: -28, y: 28, z: 30}, color: '#2a2a28', solid: true }),
+                S({ id: 'cave_r', layer: 'L2', geo: 'Cube',
+                    scale: {x: 18, y: 55, z: 22}, sizeZ: 22,
+                    position: {x: 28, y: 28, z: 30}, color: '#2a2a28', solid: true }),
+                S({ id: 'cave_top', layer: 'L2', geo: 'Cube',
+                    scale: {x: 74, y: 16, z: 24}, sizeZ: 24,
+                    position: {x: 0, y: 58, z: 30}, color: '#333330', solid: true }),
+            ];
+            // merge into main room solid boxes by building into same scene
+            const caveRoom = RoomBuilderV3.build(scene, caveShapes, {
+                layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+            });
+            // keep reference for clamp if needed
+            window._caveRoom = caveRoom;
+            // Dark mouth plane
+            const mouth = new THREE.Mesh(
+                new THREE.PlaneGeometry(42, 48),
+                new THREE.MeshBasicMaterial({ color: 0x050508, side: THREE.DoubleSide })
+            );
+            mouth.position.set(0, RoomBuilderV3.FLOOR_Y + 28, 18);
+            scene.add(mouth);
+            window._caveMouth = mouth;
+        })();
+
+        // Player sprite -- owned by SpriteSystemV3 now (directional frames,
+        // animation timing, and billboard-facing all live in the module;
+        // index.html just tells it where to be and which way it's facing).
+        const player = SpriteSystemV3.createPlayer(loader, {
+            position: { x: 0, y: 0, z: -ZONE_L * 0.22 },
+            layer: 'L3'
+        });
+        scene.add(player.mesh);
+
+        // Enemy system -- same deal, each enemy is a SpriteSystemV3 sprite
+        // instead of a hand-built mesh/material pair.
+        const enemyTexturesList = [
+            'assets/enemies/SLIME-1-0.png',
+            'assets/enemies/KNIGHTUP-1.png',
+            'assets/enemies/NEOPEDEUP.png',
+            'assets/enemies/BOOEY-1-0.png'
+        ];
+        const activeEnemies = [];
+
+        window.spawnEnemy = function (texturePath, x = null, z = null) {
+            const posX = x !== null ? x : (Math.random() - 0.5) * 300;
+            const posZ = z !== null ? z : -50 - Math.random() * 150;
+            const enemy = SpriteSystemV3.createEnemy(texturePath, loader, {
+                position: { x: posX, y: 0, z: posZ },
+                layer: 'L3'
+            });
+            scene.add(enemy.mesh);
+            activeEnemies.push(enemy);
+            // randomizer panel removed
+        };
+// Default slime
+        window.spawnEnemy('assets/enemies/SLIME-1-0.png', 0, -40);
+
+        // Zelda II homage — textboard above the slime
+        (function placeErrorSign() {
+            const c = document.createElement('canvas');
+            c.width = 256; c.height = 64;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 256, 64);
+            ctx.strokeStyle = '#00ff66';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(2, 2, 252, 60);
+            ctx.fillStyle = '#00ff66';
+            ctx.font = 'bold 28px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('I AM ERROR', 128, 32);
+            const tex = new THREE.CanvasTexture(c);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex, transparent: true, side: THREE.DoubleSide
+            });
+            const sign = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), mat);
+            // Above slime at (0, -40)
+            sign.position.set(0, RoomBuilderV3.FLOOR_Y + 55, -40);
+            sign.userData.isProp = true;
+            scene.add(sign);
+            if (typeof overworldProps !== 'undefined') overworldProps.push(sign);
+            else {
+                // face camera in animate via dedicated ref
+                window._errorSign = sign;
+            }
+        })();
+
+        // Controls
+        const keys = { w: false, a: false, s: false, d: false };
+        let currentDir = 'down';
+        let isOverlayOpen = false;
+        let isWarping = false;
+
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = true;
+
+            if (k === 'f' || k === 'escape') {
+                if (isOverlayOpen) closeOverlay();
+                else checkScreenInteraction();
+            }
+
+            if (isOverlayOpen) {
+                if (e.key === '1') warpTo('road_1.html');
+                if (e.key === '2') warpTo('road_2.html');
+                if (e.key === '3') warpTo('secret_factory.html');
+                if (e.key === '4') warpTo('main_menu.html');
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (k in keys) keys[k] = false;
+        });
+
+        function updatePlayerMovement() {
+            if (isOverlayOpen) return;
+
+            let moving = false;
+            let dir = currentDir;
+            const moveSpeed = 3.5;
+            const pos = player.position; // live THREE.Vector3 on the sprite's mesh
+
+            if (keys.w) { pos.z -= moveSpeed; dir = 'up'; moving = true; }
+            else if (keys.s) { pos.z += moveSpeed; dir = 'down'; moving = true; }
+
+            if (keys.a) { pos.x -= moveSpeed; if (!moving) dir = 'left'; moving = true; }
+            else if (keys.d) { pos.x += moveSpeed; if (!moving) dir = 'right'; moving = true; }
+
+            currentDir = dir;
+            player.setDirection(currentDir);
+            player.setMoving(moving);
+            player.update(); // advances the walk-cycle frame when moving
+
+            // CE1 terrain height snap
+            if (terrain) {
+                const halfH = (player.height || 45) * 0.5;
+                pos.y = terrain.getHeight(pos.x, pos.z) + halfH;
+            }
+
+            // Beginning cave entrance (center, near slime)
+            if (Math.abs(pos.x) < 30 && pos.z > 5 && pos.z < 45) {
+                warpTo('beginning.html');
+                return;
+            }
+
+            // Open Zone edge warps (W=2560 → ±1280, L=5000 → ±2500)
+            const halfW = 1280;
+            const halfL = 2500;
+            if (pos.x <= -halfW) { warpTo('road_1.html'); return; }       // WEST
+            if (pos.x >=  halfW) { warpTo('road_2.html'); return; }       // EAST
+            if (pos.z <= -halfL) { warpTo('secret_factory.html'); return; } // NORTH
+            if (pos.z >=  halfL) { warpTo('main_menu.html'); return; }    // SOUTH
+
+            camera.position.x = pos.x;
+            camera.position.y = pos.y + 90;
+            camera.position.z = pos.z + 220;
+            camera.lookAt(pos.x, pos.y + 15, pos.z - 50);
+        }
+
+        function warpTo(url) { window.location.href = url; }
+        window.warpTo = warpTo;
+
+        function checkEnemyCollisions() {
+            if (isWarping || isOverlayOpen) return;
+            activeEnemies.forEach(enemy => {
+                if (player.position.distanceTo(enemy.position) < 35.0) {
+                    isWarping = true;
+                    openOverlay();
+                }
+            });
+        }
+
+        function checkScreenProximity() {
+            const dist = player.position.distanceTo(terminal.position);
+            if (dist < 180 && !isOverlayOpen) {
+                hudSub.innerHTML = '<span style="color:#ffff00;font-weight:bold;">[ PRESS \'F\' TO ACCESS STAGE SELECT ]</span>';
+            } else if (!isOverlayOpen) {
+                const nearCave = Math.abs(player.position.x) < 40 && player.position.z > 0 && player.position.z < 55;
+                if (nearCave) {
+                    hudSub.innerHTML = '<span style="color:#88ccff;">[ WALK INTO CAVE — BEGINNING ]</span>';
+                } else {
+                    hudSub.innerHTML = 'CONTROLS: WASD = MOVE | F = TERMINAL | CAVE = CENTER';
+                }
+            }
+        }
+
+        function checkScreenInteraction() {
+            if (player.position.distanceTo(terminal.position) < 180) openOverlay();
+        }
+
+        function openOverlay() {
+            isOverlayOpen = true;
+            document.getElementById('stage-select-overlay').style.display = 'flex';
+        }
+
+        function closeOverlay() {
+            isOverlayOpen = false;
+            isWarping = false;
+            document.getElementById('stage-select-overlay').style.display = 'none';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayerMovement();
+            checkEnemyCollisions();
+            checkScreenProximity();
+
+            terminal.lookAt(camera.position.x, terminal.position.y, camera.position.z);
+            player.faceCamera(camera);
+            activeEnemies.forEach(e => e.faceCamera(camera));
+            if (typeof overworldProps !== 'undefined') {
+                overworldProps.forEach(m => {
+                    m.lookAt(camera.position.x, m.position.y, camera.position.z);
+                });
+            }
+            if (window._errorSign) {
+                window._errorSign.lookAt(camera.position.x, window._errorSign.position.y, camera.position.z);
+            }
+            RoomBuilderV3.faceBillboards(room, camera);
+
+            statusEl.textContent = 'X:' + player.position.x.toFixed(0) + '  Z:' + player.position.z.toFixed(0) +
+                '   |   Enemies: ' + activeEnemies.length + '   |   Central Zone 5000×2560';
+
+            renderer.render(scene, camera);
+        }
+
+        statusEl.textContent = 'MAIN overworld center — Open Zone 5000×2560 (Forest / room1)';
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    })();
+    </script>
+</body>
+</html>
