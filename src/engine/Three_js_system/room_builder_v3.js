@@ -141,17 +141,13 @@
             }
 
             if (s.solid && s.geo === 'Cube') {
-                const halfX = (s.scale?.x || 1) * 0.5;
-                const halfY = (s.scale?.y || 1) * 0.5;
-                const halfZ = (s.sizeZ || s.scale?.z || 1) * 0.5;
+                // Very simple AABB for now
                 solidBoxes.push({
                     mesh,
-                    minX: mesh.position.x - halfX,
-                    maxX: mesh.position.x + halfX,
-                    minY: mesh.position.y - halfY,
-                    maxY: mesh.position.y + halfY,
-                    minZ: mesh.position.z - halfZ,
-                    maxZ: mesh.position.z + halfZ
+                    minX: mesh.position.x - (s.scale?.x || 1) * 0.5,
+                    maxX: mesh.position.x + (s.scale?.x || 1) * 0.5,
+                    minZ: mesh.position.z - (s.sizeZ || 1) * 0.5,
+                    maxZ: mesh.position.z + (s.sizeZ || 1) * 0.5
                 });
             }
         });
