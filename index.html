@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neondromeda - Central Sector (Open Zone)</title>
+    <title>Legacy of Chroma - Open Field</title>
     <style>
         @font-face {
             font-family: 'RetroCGA';
@@ -62,7 +62,7 @@
     <div class="scanlines"></div>
 
     <div id="hud">
-        <div class="title">NEONDROMEDA // CENTRAL + WEST OPEN ZONE</div>
+        <div class="title">LEGACY OF CHROMA // HYRULE-SCALE FIELD</div>
         <div class="sub" id="hud-sub">WASD MOVE | ARROWS camera | F INTERACT | WEST = WOODS/TOMB</div>
     </div>
 
@@ -130,12 +130,13 @@
         // Design intent was UE-style units (cm). Our Three.js rooms use
         // ~1 unit ≈ gameplay stride (D1 is 960×720). Scale ×10 so the
         // central Open Zone is a real overworld chunk, not a closet.
-        const ZONE_L = 5000;   // length (Z)
-        const ZONE_W = 4200;   // width  (X) — expanded to merge West / Lost Woods
-        const ZONE_H = 2560;   // height budget
+        const ZONE_L = 14000;  // N–S  Twilight Princess–class field
+        const ZONE_W = 12000;  // E–W
+        const ZONE_H = 2560;
+
 
         // Day/night skybox cycle — samples in assets/textures/skybox/
-        scene.fog = new THREE.FogExp2(0x87a0c0, 0.00048); // denser — hides zone edges
+        scene.fog = new THREE.FogExp2(0x87a0c0, 0.00022); // long sightlines, TP-scale field
         const sky = SkyboxSystemV3.create(scene, {
             radius: Math.max(ZONE_L, ZONE_W) * 1.4,
             cycleMinutes: 8,
@@ -167,6 +168,12 @@
         // North snow range (raise) + crevice channel
         hm.flattenCircle(0.5, 0.12, 0.28, 0.55);
         hm.flattenCircle(0.5, 0.18, 0.04, 0.02); // crevice path low
+        // TP field pads — far biomes (UV 0..1 across full ZONE)
+        hm.flattenCircle(0.5, 0.08, 0.12, 0.45);   // far north industrial plateau
+        hm.flattenCircle(0.5, 0.15, 0.18, 0.35);   // snow shelf
+        hm.flattenCircle(0.85, 0.5, 0.12, 0.08);   // east lake shelf
+        hm.flattenCircle(0.5, 0.88, 0.14, 0.06);   // south beach/forest
+        // TP field pads
         const heights = hm.getFloats();
         const nrmBake = NormalmapGeneratorV3.fromHeightmap(hm, { strength: 2.4 });
 
@@ -269,6 +276,13 @@
                 painter.paintBrush(0.40, 0.16, 0.12, [0.80, 0.86, 0.92], 0.75);
                 painter.paintBrush(0.60, 0.16, 0.12, [0.80, 0.86, 0.92], 0.75);
                 painter.paintBrush(0.50, 0.20, 0.05, [0.25, 0.28, 0.32], 0.85); // crevice dark
+                // Far north industrial steel
+                painter.paintBrush(0.50, 0.08, 0.14, [0.35, 0.36, 0.40], 0.85);
+                // East lake / teal
+                painter.paintBrush(0.88, 0.50, 0.12, [0.20, 0.38, 0.42], 0.75);
+                // South deep forest + sand fringe
+                painter.paintBrush(0.50, 0.90, 0.16, [0.10, 0.28, 0.12], 0.8);
+                painter.paintBrush(0.50, 0.95, 0.10, [0.55, 0.48, 0.32], 0.7);
 
                 painter.applyToMesh(terrain.mesh);
                 statusEl.textContent = 'Terrain painted — biomes blended';
@@ -460,6 +474,84 @@
         }
         window._northRoom = northRoom;
 
+        // ============================================================
+        // MERGED FAR LANDS (TP-scale) — was separate sector HTML
+        // North snow already present; add industrial, east lake, south edge
+        // ============================================================
+        const FAR_N = -ZONE_L * 0.42;      // industrial belt
+        const FAR_S =  ZONE_L * 0.42;
+        const FAR_E =  ZONE_W * 0.38;
+        const farShapes = [
+            // Industrial D7 pad / stacks
+            S({ id: 'ind_pad', layer: 'L1', geo: 'Cube',
+                scale: { x: 220, y: 8, z: 180 }, sizeZ: 180,
+                position: { x: 0, y: 4, z: FAR_N }, color: '#3a3a40', solid: true }),
+            S({ id: 'ind_stack1', layer: 'L2', geo: 'Cube',
+                scale: { x: 40, y: 160, z: 40 }, sizeZ: 40,
+                position: { x: -60, y: 80, z: FAR_N - 40 }, color: '#5a5a62', solid: true }),
+            S({ id: 'ind_stack2', layer: 'L2', geo: 'Cube',
+                scale: { x: 36, y: 140, z: 36 }, sizeZ: 36,
+                position: { x: 70, y: 70, z: FAR_N - 30 }, color: '#505058', solid: true }),
+            S({ id: 'd7_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 36, y: 48, z: 8 }, sizeZ: 8,
+                position: { x: 0, y: 28, z: FAR_N + 90 }, color: '#ff5533', solid: false }),
+            // D8 annex
+            S({ id: 'd8_pad', layer: 'L1', geo: 'Cube',
+                scale: { x: 140, y: 6, z: 120 }, sizeZ: 120,
+                position: { x: -280, y: 3, z: FAR_N + 200 }, color: '#2a2a30', solid: true }),
+            S({ id: 'd8_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 32, y: 44, z: 8 }, sizeZ: 8,
+                position: { x: -280, y: 26, z: FAR_N + 260 }, color: '#44ff66', solid: false }),
+            // East lake dock / D4 gate
+            S({ id: 'dock', layer: 'L1', geo: 'Cube',
+                scale: { x: 160, y: 6, z: 80 }, sizeZ: 80,
+                position: { x: FAR_E, y: 3, z: 200 }, color: '#3a4a40', solid: true }),
+            S({ id: 'd4_gate', layer: 'L2', geo: 'Cube',
+                scale: { x: 20, y: 70, z: 60 }, sizeZ: 60,
+                position: { x: FAR_E + 40, y: 35, z: 200 }, color: '#2a3a50', solid: true }),
+            S({ id: 'd4_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 8, y: 44, z: 32 }, sizeZ: 32,
+                position: { x: FAR_E + 20, y: 28, z: 200 }, color: '#4488cc', solid: false }),
+            // South shrine / D5 marker
+            S({ id: 'south_stone', layer: 'L2', geo: 'Cube',
+                scale: { x: 50, y: 80, z: 50 }, sizeZ: 50,
+                position: { x: 0, y: 40, z: FAR_S }, color: '#4a4038', solid: true }),
+            S({ id: 'd5_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 28, y: 40, z: 8 }, sizeZ: 8,
+                position: { x: 0, y: 24, z: FAR_S - 40 }, color: '#ccaa44', solid: false }),
+            // D3 ice cavern mouth (snow band, mid-north)
+            S({ id: 'ice_l', layer: 'L2', geo: 'Cube',
+                scale: { x: 18, y: 60, z: 24 }, sizeZ: 24,
+                position: { x: 380, y: 32, z: -ZONE_L * 0.28 }, color: '#4a6a8a', solid: true }),
+            S({ id: 'ice_r', layer: 'L2', geo: 'Cube',
+                scale: { x: 18, y: 60, z: 24 }, sizeZ: 24,
+                position: { x: 440, y: 32, z: -ZONE_L * 0.28 }, color: '#4a6a8a', solid: true }),
+            S({ id: 'ice_top', layer: 'L2', geo: 'Cube',
+                scale: { x: 80, y: 16, z: 24 }, sizeZ: 24,
+                position: { x: 410, y: 68, z: -ZONE_L * 0.28 }, color: '#5a7a9a', solid: false }),
+            S({ id: 'd3_door', layer: 'L3', geo: 'Cube',
+                scale: { x: 36, y: 42, z: 6 }, sizeZ: 6,
+                position: { x: 410, y: 28, z: -ZONE_L * 0.28 + 20 }, color: '#88ccff', solid: false }),
+        ];
+        const farRoom = RoomBuilderV3.build(scene, farShapes, {
+            layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
+        });
+        if (farRoom.solidBoxes && room.solidBoxes) {
+            room.solidBoxes = room.solidBoxes.concat(farRoom.solidBoxes.filter(function (b) {
+                return (b.maxX - b.minX) < 250 && (b.maxZ - b.minZ) < 250;
+            }));
+        }
+        window._farRoom = farRoom;
+        window._dungeonDoors = {
+            d7: { x: 0, z: FAR_N + 90, url: 'd_7.html' },
+            d8: { x: -280, z: FAR_N + 260, url: 'd_8.html' },
+            d4: { x: FAR_E + 20, z: 200, url: 'd_4.html' },
+            d5: { x: 0, z: FAR_S - 40, url: 'd_5.html' },
+            d3: { x: 410, z: -ZONE_L * 0.28 + 20, url: 'd_3.html' },
+            d1: { x: -1550, z: -200, url: 'd_1boss.html' },
+            d6: { x: FAR_E - 100, z: FAR_S * 0.5, url: 'd_6.html' }
+        };
+
         // ---- Overworld props (forest + ground-snapped) ----
         const overworldProps = [];
         const treeColliders = []; // {x,z,r} trunk blockers
@@ -509,6 +601,12 @@
         scatterForest(-1400, 100, 55, 1000, 1400);
         scatterForest(-1600, -400, 28, 800, 800);
         scatterForest(-1200, 600, 28, 700, 700);
+        // Far field belts (merged lands)
+        scatterForest(0, 4500, 40, 2800, 1600);
+        scatterForest(4000, 500, 24, 1400, 2000);
+        scatterForest(-4000, 800, 20, 1200, 1800);
+        scatterForest(0, -3500, 16, 2000, 1200);
+
 
         const boulderSpots = [
             [-400, -700], [500, -600], [-150, 400], [300, 200], [-600, -200],
@@ -638,6 +736,15 @@
         makeSign('SW\nDESERT', -ZONE_W * 0.36, ZONE_L * 0.36, '#ddaa44');
         makeSign('CAVE\nBEGINNING', -320, 60, '#88ccff');
         makeSign('← HUB CENTER', -100, 180, '#00ff66');
+        makeSign('D7 FACTORY', 0, -ZONE_L * 0.42 + 120, '#ff6644');
+        makeSign('D8 PARALLEL', -280, -ZONE_L * 0.42 + 280, '#44ff66');
+        makeSign('D3 ICE', 410, -ZONE_L * 0.28 + 60, '#88ccff');
+        makeSign('D4 LAKE', ZONE_W * 0.38, 240, '#4488cc');
+        makeSign('D5 SOUTH', 0, ZONE_L * 0.42 - 20, '#ccaa44');
+        makeSign('NORTH FIELD', 0, -ZONE_L * 0.25, '#aaccff');
+        makeSign('EAST FIELD', ZONE_W * 0.25, 0, '#66ccff');
+        makeSign('SOUTH FIELD', 0, ZONE_L * 0.25, '#88ff88');
+
 
         // ---- Fake distant LOD (horizon silhouettes) ----
         // Soft cards beyond playable soft-bounds so edges never look hard-cut
@@ -835,17 +942,7 @@
             minDistance: 100,
             maxDistance: 420
         });
-        const optionsMenu = (typeof OptionsMenuV3 !== 'undefined')
-            ? OptionsMenuV3.create({
-                camera: camera,
-                camCtrl: camCtrl,
-                player: player,
-                defaultFov: 55,
-                onPauseChange: function (paused) {
-                    isOverlayOpen = paused; // freeze movement
-                }
-            })
-            : null;
+
 
         // Enemy system -- same deal, each enemy is a SpriteSystemV3 sprite
         // instead of a hand-built mesh/material pair.
@@ -895,6 +992,24 @@
             radiusMin: 200,
             radiusMax: 480
         });
+
+        const optionsMenu = (typeof OptionsMenuV3 !== 'undefined')
+            ? OptionsMenuV3.create({
+                camera: camera,
+                renderer: renderer,
+                scene: scene,
+                camCtrl: camCtrl,
+                player: player,
+                overworldProps: overworldProps,
+                entities: activeEnemies,
+                nightSpawn: nightSpawn,
+                defaultFov: 55,
+                onPauseChange: function (paused) {
+                    isOverlayOpen = paused;
+                }
+            })
+            : null;
+
 
         // ---- HP bars + inventory (lantern / ocarina / sword) ----
         const hpBars = HpBarSystemV3.create(scene, loader);
@@ -1054,13 +1169,13 @@
             //   SE corner (x>900 & z>1800) → lake_sector.html (CoPilot / D4)
             //   SW corner (x<-900 & z>1800) → desert_sector.html (Gemini)
             //   SOUTH → south_sector.html (Forest edge / Beach)
-            const halfW = 2100; // ZONE_W/2 expanded west
-            const halfL = 2500;
+            const halfW = 6000; // ZONE_W/2 TP field
+            const halfL = 7000;
             // WEST merged into hub — soft bound only (no road_1 warp)
             if (pos.x <= -halfW) { pos.x = -halfW + 2; }
-            if (pos.x >=  halfW) { warpTo('east_sector.html'); return; }        // EAST
-            if (pos.z <= -halfL) { warpTo('north_sector.html'); return; } // NORTH
-            if (pos.z >=  halfL) { warpTo('south_sector.html'); return; }  // SOUTH
+            if (pos.x >=  halfW) pos.x = halfW - 2;
+            if (pos.z <= -halfL) pos.z = -halfL + 2;
+            if (pos.z >=  halfL) pos.z = halfL - 2;
 
             // CameraControlsV3: drag orbit + wheel zoom (south_sector pattern)
             if (typeof camCtrl !== 'undefined' && camCtrl) {
@@ -1135,10 +1250,22 @@
                 statusEl.textContent = 'OLD MAN: It is dangerous to go alone! Take this.';
                 return;
             }
-            // Tomb door → D1
+            // Tomb door → D1 boss (full d_1 pending)
             if (Math.abs(p.x - (-1550)) < 70 && Math.abs(p.z - (-200)) < 80) {
-                warpTo('d_1.html'); return;
+                warpTo('d_1boss.html'); return;
             }
+            // Merged land dungeon doors
+            if (window._dungeonDoors) {
+                const doors = window._dungeonDoors;
+                for (const id in doors) {
+                    if (id === 'd1') continue;
+                    const d = doors[id];
+                    if (Math.abs(p.x - d.x) < 60 && Math.abs(p.z - d.z) < 60) {
+                        warpTo(d.url); return;
+                    }
+                }
+            }
+        }
 
         function openOverlay() { /* stage menu removed */ }
 
@@ -1147,6 +1274,9 @@
         let autosaveAcc = 0;
         function animate() {
             requestAnimationFrame(animate);
+            if (optionsMenu && optionsMenu.beginFrame && !optionsMenu.beginFrame(performance.now())) {
+                return;
+            }
             const _dt = 1 / 60;
             autosaveAcc += _dt;
             if (autosaveAcc > 10 && typeof playerState !== 'undefined' && typeof inventory !== 'undefined') {
@@ -1154,7 +1284,7 @@
                 playerState.syncFromInventory(inventory).save();
             }
             // Day/night sky + light drive
-            if (typeof sky !== 'undefined' && sky) {
+            if (typeof sky !== 'undefined' && sky && (!optionsMenu || optionsMenu.shouldUpdateSky())) {
                 const sun = scene.getObjectByName('terrain-sun');
                 const ambs = scene.children.filter(c => c.isAmbientLight);
                 sky.update(_dt, {
@@ -1166,7 +1296,7 @@
                 });
                 if (typeof clock !== 'undefined') clock.setHour(sky.getHour());
             }
-            if (typeof nightSpawn !== 'undefined') {
+            if (typeof nightSpawn !== 'undefined' && (!optionsMenu || optionsMenu.shouldNightSpawn())) {
                 nightSpawn.update(_dt);
                 nightSpawn.faceCamera(camera);
                 // Attach HP bars to new night spawns
@@ -1186,13 +1316,15 @@
             player.faceCamera(camera);
             activeEnemies.forEach(e => e.faceCamera(camera));
             if (typeof overworldProps !== 'undefined') {
+                const doBill = !optionsMenu || optionsMenu.shouldBillboard();
                 overworldProps.forEach(m => {
                     if (m.userData && m.userData.isRoad) return;
+                    if (!m.visible) return;
                     if (terrain && m.userData && m.userData.propH != null) {
                         const gy = terrain.getHeight(m.userData.baseX, m.userData.baseZ);
                         m.position.y = gy + m.userData.propH * 0.45;
                     }
-                    m.lookAt(camera.position.x, m.position.y, camera.position.z);
+                    if (doBill) m.lookAt(camera.position.x, m.position.y, camera.position.z);
                 });
             }
             // LOD cards face camera, stay soft on horizon
@@ -1213,12 +1345,12 @@
             RoomBuilderV3.faceBillboards(room, camera);
 
             statusEl.textContent = 'X:' + player.position.x.toFixed(0) + '  Z:' + player.position.z.toFixed(0) +
-                '   |   Field: ' + (typeof nightSpawn !== 'undefined' ? nightSpawn.getEnemies().length : 0) + '   |   ' + (typeof clock !== 'undefined' ? clock.getPhase() : '') + '   |   Zone 5000×4200 (W merged)';
+                '   |   Field: ' + (typeof nightSpawn !== 'undefined' ? nightSpawn.getEnemies().length : 0) + '   |   ' + (typeof clock !== 'undefined' ? clock.getPhase() : '') + '   |   Field 14000×12000 TP-scale';
 
             renderer.render(scene, camera);
         }
 
-        statusEl.textContent = 'MAIN overworld center — Open Zone 5000×4200 (W merged) (Forest / room1) | Check F12 console for 404s';
+        statusEl.textContent = 'MAIN overworld center — Open Field 14000×12000 TP-scale (Forest / room1) | Check F12 console for 404s';
         console.log('=== NEONDROMEDA DEBUG ===');
         console.log('ChromaEngine: BYPASSED (direct load)');
         console.log('RoomBuilderV3:', typeof RoomBuilderV3);
