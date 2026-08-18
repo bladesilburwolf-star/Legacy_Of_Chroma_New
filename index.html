@@ -83,6 +83,10 @@
     <script src="src/engine/Three_js_system/night_spawn_v3.js"></script>
     <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
     <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/ocarina_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/weather_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/water_system_v3.js"></script>
+    <script src="src/engine/Three_js_system/bomb_system_v3.js"></script>
     <script src="src/engine/Three_js_system/player_state_v3.js"></script>
     <script src="src/engine/Three_js_system/menu_system.js"></script>
     <script src="src/engine/Three_js_system/options_menu_v3.js"></script>
@@ -174,6 +178,7 @@
         hm.flattenCircle(0.5, 0.15, 0.18, 0.35);   // snow shelf
         hm.flattenCircle(0.85, 0.5, 0.12, 0.08);   // east lake shelf
         hm.flattenCircle(0.5, 0.88, 0.14, 0.06);   // south beach/forest
+        hm.flattenCircle(0.52, 0.82, 0.08, 0.05);  // hidden palace pad (south)
         // TP field pads
         // OoT-style terrain holes / gorges (deep sinks)
         hm.brush(0.62, 0.55, 0.04, -0.35);
@@ -521,13 +526,10 @@
             S({ id: 'd4_door', layer: 'L3', geo: 'Cube',
                 scale: { x: 8, y: 44, z: 32 }, sizeZ: 32,
                 position: { x: FAR_E + 20, y: 28, z: 200 }, color: '#4488cc', solid: false }),
-            // South shrine / D5 marker
+            // South shrine (no longer D5 — D5 is NE water palace)
             S({ id: 'south_stone', layer: 'L2', geo: 'Cube',
                 scale: { x: 50, y: 80, z: 50 }, sizeZ: 50,
                 position: { x: 0, y: 40, z: FAR_S }, color: '#4a4038', solid: true }),
-            S({ id: 'd5_door', layer: 'L3', geo: 'Cube',
-                scale: { x: 28, y: 40, z: 8 }, sizeZ: 8,
-                position: { x: 0, y: 24, z: FAR_S - 40 }, color: '#ccaa44', solid: false }),
             // D3 ice cavern mouth (snow band, mid-north)
             S({ id: 'ice_l', layer: 'L2', geo: 'Cube',
                 scale: { x: 18, y: 60, z: 24 }, sizeZ: 24,
@@ -554,12 +556,160 @@
         window._dungeonDoors = {
             d7: { x: 0, z: FAR_N + 90, url: 'd_7.html' },
             d8: { x: -280, z: FAR_N + 260, url: 'd_8.html' },
-            d4: { x: FAR_E + 20, z: 200, url: 'd_4.html' },
-            d5: { x: 0, z: FAR_S - 40, url: 'd_5.html' },
-            d3: { x: 410, z: -ZONE_L * 0.28 + 20, url: 'd_3.html' },
+            /* d4 Hidden Palace — south, night-only via _hiddenPalace (not generic door) */
+            /* d5 Meta's Floating Palace — NE lake, raft-gated via _waterPalace */
+            /* d3 Ice Palace — lantern-gated via _icePalace */
+
             d1: { x: -1550, z: -200, url: 'd_1.html' },
             d6: { x: FAR_E - 100, z: FAR_S * 0.5, url: 'd_6.html' }
         };
+
+        // ============================================================
+        // META'S FLOATING PALACE (D5) — NE water · raft required
+        // "It compiled in the chat. It did not compile in the world."
+        // ============================================================
+        const WP_X = FAR_E - 40;
+        const WP_Z = -ZONE_L * 0.12;
+        const WATER_Y = (typeof RoomBuilderV3 !== 'undefined' ? RoomBuilderV3.FLOOR_Y : -100) + 18;
+
+        // Lower terrain under lake
+        if (hm && hm.flattenCircle) {
+            try {
+                // UV approx for NE: u high, v mid-north
+                hm.flattenCircle(0.82, 0.38, 0.14, 0.02);
+            } catch (e) {}
+        }
+
+        // Water plane (module or fallback)
+        let lakeWater = null;
+        if (typeof WaterSystemV3 !== 'undefined') {
+            lakeWater = WaterSystemV3.create(scene, loader, {
+                sizeX: 900,
+                sizeZ: 700,
+                waterY: WATER_Y,
+                position: { x: WP_X, z: WP_Z },
+                shallowColor: 0x2266aa,
+                deepColor: 0x0a2040
+            });
+            // If module ignores position, shift mesh
+            if (lakeWater && lakeWater.mesh) {
+                lakeWater.mesh.position.x = WP_X;
+                lakeWater.mesh.position.z = WP_Z;
+            }
+        } else {
+            const wmat = new THREE.MeshStandardMaterial({
+                color: 0x1a5a9a,
+                transparent: true,
+                opacity: 0.72,
+                roughness: 0.25,
+                metalness: 0.3
+            });
+            const wmesh = new THREE.Mesh(new THREE.PlaneGeometry(900, 700, 32, 32), wmat);
+            wmesh.rotation.x = -Math.PI / 2;
+            wmesh.position.set(WP_X, WATER_Y, WP_Z);
+            scene.add(wmesh);
+            lakeWater = {
+                mesh: wmesh,
+                update: function (dt) {
+                    wmesh.position.y = WATER_Y + Math.sin(performance.now() * 0.001) * 1.2;
+                }
+            };
+        }
+        window._lakeWater = lakeWater;
+
+        // Weather over the lake (light rain / mist)
+        let lakeWeather = null;
+        if (typeof WeatherSystemV3 !== 'undefined') {
+            lakeWeather = WeatherSystemV3.create(scene, {
+                type: 'rain',
+                intensity: 0.35,
+                area: { x: WP_X, z: WP_Z, radius: 500 }
+            });
+        }
+        window._lakeWeather = lakeWeather;
+
+        // Floating palace (island platform + keep)
+        const waterPalace = new THREE.Group();
+        waterPalace.name = 'water_palace_d5';
+        function wpMesh(geo, mat, x, y, z) {
+            const m = new THREE.Mesh(geo, mat);
+            m.position.set(x, y, z);
+            waterPalace.add(m);
+            return m;
+        }
+        const stoneMat = new THREE.MeshStandardMaterial({
+            color: 0x4a6a8a, roughness: 0.85, metalness: 0.1,
+            emissive: 0x102030, emissiveIntensity: 0.15
+        });
+        const roofMat = new THREE.MeshStandardMaterial({
+            color: 0x2a4060, roughness: 0.7, emissive: 0x081828, emissiveIntensity: 0.2
+        });
+        // Island deck
+        wpMesh(new THREE.CylinderGeometry(95, 110, 16, 12), stoneMat, WP_X, WATER_Y + 10, WP_Z);
+        // Keep body
+        wpMesh(new THREE.BoxGeometry(120, 90, 100), stoneMat, WP_X, WATER_Y + 60, WP_Z);
+        // Roof
+        wpMesh(new THREE.BoxGeometry(130, 24, 110), roofMat, WP_X, WATER_Y + 112, WP_Z);
+        // Turrets
+        wpMesh(new THREE.CylinderGeometry(14, 16, 70, 8), stoneMat, WP_X - 55, WATER_Y + 70, WP_Z - 40);
+        wpMesh(new THREE.CylinderGeometry(14, 16, 70, 8), stoneMat, WP_X + 55, WATER_Y + 70, WP_Z - 40);
+        // Door (cyan — Meta brand of almost-working)
+        const wpDoor = wpMesh(
+            new THREE.BoxGeometry(32, 48, 8),
+            new THREE.MeshStandardMaterial({
+                color: 0x44aaff, emissive: 0x2266cc, emissiveIntensity: 0.5, roughness: 0.4
+            }),
+            WP_X, WATER_Y + 40, WP_Z + 52
+        );
+        wpDoor.userData.isWaterPalaceDoor = true;
+        // Pier from shore (east approach) — only walkable with raft conceptually
+        const pierMat = new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.9 });
+        wpMesh(new THREE.BoxGeometry(40, 6, 180), pierMat, WP_X - 140, WATER_Y + 8, WP_Z + 20);
+        // Signpost on shore
+        const shoreSign = new THREE.Mesh(
+            new THREE.BoxGeometry(48, 30, 4),
+            new THREE.MeshBasicMaterial({ color: 0x1a3040 })
+        );
+        shoreSign.position.set(WP_X - 220, WATER_Y + 30, WP_Z + 40);
+        scene.add(shoreSign);
+        scene.add(waterPalace);
+
+        window._waterPalace = {
+            group: waterPalace,
+            door: wpDoor,
+            x: WP_X,
+            z: WP_Z,
+            doorZ: WP_Z + 52,
+            waterY: WATER_Y,
+            // Meta memorial plaque
+            plaque: 'META\'S FLOATING PALACE — entry requires RAFT (the session limit was not a boat)'
+        };
+        console.log('Water Palace D5 @', WP_X, WP_Z);
+
+        // Raft world pickup on the western shore of the lake (so D5 is reachable)
+        (function () {
+            const raftMat = new THREE.MeshBasicMaterial({ color: 0x8a6030, transparent: true });
+            const raftMesh = new THREE.Mesh(new THREE.BoxGeometry(36, 8, 24), raftMat);
+            const rx = (window._waterPalace ? window._waterPalace.x : FAR_E) - 240;
+            const rz = (window._waterPalace ? window._waterPalace.z : 0) + 60;
+            const ry = (window._waterPalace ? window._waterPalace.waterY : 0) + 12;
+            raftMesh.position.set(rx, ry, rz);
+            // Try texture
+            try {
+                const lt = new THREE.TextureLoader();
+                lt.load('assets/inventory/RAFT-1.png', function (tex) {
+                    tex.magFilter = THREE.NearestFilter;
+                    raftMesh.material = new THREE.MeshBasicMaterial({
+                        map: tex, transparent: true, side: THREE.DoubleSide
+                    });
+                    raftMesh.geometry = new THREE.PlaneGeometry(40, 28);
+                });
+            } catch (e) {}
+            scene.add(raftMesh);
+            window._raftPickup = { mesh: raftMesh, x: rx, z: rz };
+        })();
+
+
 
         // ---- Overworld props (forest + ground-snapped) ----
         const overworldProps = [];
@@ -625,6 +775,278 @@
             const s = 0.9 + Math.random() * 0.3;
             addProp('assets/overworld/BOULDER-1.png', p[0], p[1], 34 * s, 30 * s, { collide: true, radius: 16 });
         });
+
+        
+
+        // ============================================================
+        // ICE PALACE (D3) — north snow · transparent ice cube · LANTERN required
+        // ============================================================
+        const ICE_X = 410;
+        const ICE_Z = -ZONE_L * 0.28 + 20;
+        const icePalaceGroup = new THREE.Group();
+        icePalaceGroup.name = 'ice_palace_d3';
+
+        const iceCube = new THREE.Mesh(
+            new THREE.BoxGeometry(100, 90, 100),
+            new THREE.MeshStandardMaterial({
+                color: 0xaadfff,
+                transparent: true,
+                opacity: 0.35,
+                roughness: 0.15,
+                metalness: 0.4,
+                emissive: 0x224466,
+                emissiveIntensity: 0.2
+            })
+        );
+        iceCube.position.set(ICE_X, 48, ICE_Z);
+        iceCube.userData.iceBarrier = true;
+        icePalaceGroup.add(iceCube);
+
+        const iceDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(36, 48, 8),
+            new THREE.MeshStandardMaterial({
+                color: 0x88ccff,
+                emissive: 0x4488cc,
+                emissiveIntensity: 0.4,
+                roughness: 0.5
+            })
+        );
+        iceDoor.position.set(ICE_X, 28, ICE_Z + 10);
+        icePalaceGroup.add(iceDoor);
+
+        const spireMat = new THREE.MeshStandardMaterial({
+            color: 0xc8e8ff, transparent: true, opacity: 0.55, roughness: 0.2
+        });
+        [[-50, -30], [50, -30], [-40, 40], [45, 35]].forEach(function (o) {
+            const sp = new THREE.Mesh(new THREE.ConeGeometry(10, 55, 5), spireMat);
+            sp.position.set(ICE_X + o[0], 40, ICE_Z + o[1]);
+            icePalaceGroup.add(sp);
+        });
+        scene.add(icePalaceGroup);
+
+        let iceWeather = null;
+        if (typeof WeatherSystemV3 !== 'undefined') {
+            iceWeather = WeatherSystemV3.create(scene, {
+                type: 'snow',
+                intensity: 0.7,
+                area: { x: ICE_X, z: ICE_Z, radius: 420 }
+            });
+        } else {
+            const snowCount = 400;
+            const snowGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(snowCount * 3);
+            for (let i = 0; i < snowCount; i++) {
+                positions[i * 3] = ICE_X + (Math.random() - 0.5) * 400;
+                positions[i * 3 + 1] = 40 + Math.random() * 180;
+                positions[i * 3 + 2] = ICE_Z + (Math.random() - 0.5) * 400;
+            }
+            snowGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const snowPts = new THREE.Points(snowGeo, new THREE.PointsMaterial({
+                color: 0xffffff, size: 2.5, transparent: true, opacity: 0.85
+            }));
+            scene.add(snowPts);
+            iceWeather = {
+                update: function (dt) {
+                    const pos = snowGeo.attributes.position.array;
+                    for (let i = 0; i < snowCount; i++) {
+                        pos[i * 3 + 1] -= (20 + (i % 7)) * (dt || 0.016);
+                        if (pos[i * 3 + 1] < 0) pos[i * 3 + 1] = 180 + Math.random() * 40;
+                    }
+                    snowGeo.attributes.position.needsUpdate = true;
+                }
+            };
+        }
+        window._iceWeather = iceWeather;
+
+        window._icePalace = {
+            group: icePalaceGroup,
+            cube: iceCube,
+            door: iceDoor,
+            x: ICE_X,
+            z: ICE_Z,
+            solid: { minX: ICE_X - 50, maxX: ICE_X + 50, minZ: ICE_Z - 50, maxZ: ICE_Z + 50 },
+            melted: false,
+            meltProgress: 0
+        };
+
+        (function () {
+            const lx = ICE_X - 120, lz = ICE_Z + 30;
+            const lanternMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(28, 32),
+                new THREE.MeshBasicMaterial({ color: 0xffcc66, transparent: true, side: THREE.DoubleSide })
+            );
+            const gy = (typeof terrain !== 'undefined' && terrain && terrain.getHeight)
+                ? terrain.getHeight(lx, lz)
+                : (typeof RoomBuilderV3 !== 'undefined' ? RoomBuilderV3.FLOOR_Y + 20 : 20);
+            lanternMesh.position.set(lx, (typeof gy === 'number' ? gy : 20) + 18, lz);
+            try {
+                new THREE.TextureLoader().load('assets/inventory/LANTERN-1.png', function (tex) {
+                    tex.magFilter = THREE.NearestFilter;
+                    lanternMesh.material.map = tex;
+                    lanternMesh.material.color.setHex(0xffffff);
+                    lanternMesh.material.needsUpdate = true;
+                });
+            } catch (e) {}
+            scene.add(lanternMesh);
+            window._lanternPickup = { mesh: lanternMesh, x: lx, z: lz };
+        })();
+
+        console.log('Ice Palace D3 @', ICE_X, ICE_Z);
+
+        // ============================================================
+        // BOMB CAVE / D2 — east lake shore · large boulders · BOMBS required
+        // ============================================================
+        const D2_X = FAR_E + 20;
+        const D2_Z = 200;
+        const d2Group = new THREE.Group();
+        d2Group.name = 'bomb_cave_d2';
+
+        // Cave mouth frame
+        const caveMat = new THREE.MeshStandardMaterial({ color: 0x3a4a40, roughness: 0.9 });
+        const caveFrame = new THREE.Mesh(new THREE.BoxGeometry(90, 70, 40), caveMat);
+        caveFrame.position.set(D2_X, 36, D2_Z);
+        d2Group.add(caveFrame);
+        const d2Door = new THREE.Mesh(
+            new THREE.BoxGeometry(36, 48, 8),
+            new THREE.MeshStandardMaterial({
+                color: 0x4488cc, emissive: 0x224466, emissiveIntensity: 0.35
+            })
+        );
+        d2Door.position.set(D2_X, 28, D2_Z + 22);
+        d2Group.add(d2Door);
+
+        // Large blocking boulders (destructible)
+        const d2Boulders = [];
+        function addD2Boulder(ox, oz, scale) {
+            scale = scale || 1;
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(28 * scale, 7, 6),
+                new THREE.MeshStandardMaterial({
+                    color: 0x5a5a52, roughness: 0.95, flatShading: true
+                })
+            );
+            // Prefer sprite if available
+            try {
+                new THREE.TextureLoader().load('assets/overworld/BOULDER-1.png', function (tex) {
+                    tex.magFilter = THREE.NearestFilter;
+                    mesh.material = new THREE.MeshBasicMaterial({
+                        map: tex, transparent: true, side: THREE.DoubleSide
+                    });
+                    mesh.geometry = new THREE.PlaneGeometry(56 * scale, 48 * scale);
+                });
+            } catch (e) {}
+            const gy = (typeof terrain !== 'undefined' && terrain && terrain.getHeight)
+                ? terrain.getHeight(D2_X + ox, D2_Z + oz) : 10;
+            mesh.position.set(D2_X + ox, (typeof gy === 'number' ? gy : 10) + 22 * scale, D2_Z + oz);
+            mesh.userData.destructible = true;
+            d2Group.add(mesh);
+            d2Boulders.push({
+                mesh: mesh,
+                x: D2_X + ox,
+                z: D2_Z + oz,
+                r: 32 * scale,
+                alive: true
+            });
+        }
+        // Cluster blocking the door
+        addD2Boulder(0, 35, 1.35);
+        addD2Boulder(-38, 28, 1.1);
+        addD2Boulder(40, 30, 1.15);
+        addD2Boulder(-15, 55, 0.95);
+        addD2Boulder(18, 58, 1.0);
+
+        scene.add(d2Group);
+        window._bombCave = {
+            x: D2_X,
+            z: D2_Z,
+            door: d2Door,
+            boulders: d2Boulders,
+            cleared: false
+        };
+
+        // Seed a few bomb drops near east approach (and one by old man trail)
+        window._pendingBombDrops = [
+            { x: D2_X - 160, z: D2_Z + 40, n: 3 },
+            { x: D2_X - 90, z: D2_Z - 80, n: 2 },
+            { x: -200, z: 100, n: 1 }
+        ];
+
+        console.log('Bomb Cave D2 @', D2_X, D2_Z);
+
+
+        // ============================================================
+        // HIDDEN PALACE (D4) — south forest; visible/enterable only at NIGHT
+        // ============================================================
+        const HP_X = 180, HP_Z = ZONE_L * 0.36; // south of center
+        const hiddenPalaceGroup = new THREE.Group();
+        hiddenPalaceGroup.name = 'hidden_palace';
+        function hpBox(w, h, d, x, y, z, color, solid) {
+            const mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(w, h, d),
+                new THREE.MeshStandardMaterial({
+                    color: color,
+                    roughness: 0.9,
+                    metalness: 0.05,
+                    emissive: 0x1a0830,
+                    emissiveIntensity: 0.2
+                })
+            );
+            mesh.position.set(x, y, z);
+            mesh.userData.solid = !!solid;
+            mesh.userData.hiddenPalace = true;
+            hiddenPalaceGroup.add(mesh);
+            return mesh;
+        }
+        // Purple stone keep — Shadow Palace exterior
+        hpBox(220, 100, 160, HP_X, 50, HP_Z, 0x2a1840, true);
+        hpBox(180, 40, 140, HP_X, 110, HP_Z, 0x3a2060, false); // roof
+        hpBox(36, 70, 12, HP_X, 38, HP_Z + 82, 0x1a1028, false); // door recess
+        // Spire
+        hpBox(28, 90, 28, HP_X, 150, HP_Z - 20, 0x4a2880, false);
+        // Side wings (subtle)
+        hpBox(70, 60, 90, HP_X - 130, 32, HP_Z, 0x241438, true);
+        hpBox(70, 60, 90, HP_X + 130, 32, HP_Z, 0x241438, true);
+        // Door plate (glow at night)
+        const hpDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(40, 52, 8),
+            new THREE.MeshStandardMaterial({
+                color: 0x6622aa,
+                emissive: 0x4400aa,
+                emissiveIntensity: 0.0,
+                roughness: 0.5
+            })
+        );
+        hpDoor.position.set(HP_X, 28, HP_Z + 86);
+        hpDoor.userData.hiddenPalace = true;
+        hpDoor.userData.isHpDoor = true;
+        hiddenPalaceGroup.add(hpDoor);
+        // Sign (always present — text changes day/night via status)
+        const hpSign = new THREE.Mesh(
+            new THREE.BoxGeometry(50, 28, 4),
+            new THREE.MeshBasicMaterial({ color: 0x221133 })
+        );
+        hpSign.position.set(HP_X + 90, 22, HP_Z + 100);
+        hpSign.userData.hiddenPalaceSign = true;
+        scene.add(hpSign);
+        scene.add(hiddenPalaceGroup);
+        // Start hidden until first night check in animate
+        hiddenPalaceGroup.visible = false;
+        window._hiddenPalace = {
+            group: hiddenPalaceGroup,
+            door: hpDoor,
+            sign: hpSign,
+            x: HP_X,
+            z: HP_Z,
+            active: false
+        };
+        // Soft solids for night collision only — registered when visible
+        window._hiddenPalaceSolids = [
+            { minX: HP_X - 110, maxX: HP_X + 110, minZ: HP_Z - 80, maxZ: HP_Z + 80 },
+            { minX: HP_X - 165, maxX: HP_X - 95, minZ: HP_Z - 45, maxZ: HP_Z + 45 },
+            { minX: HP_X + 95, maxX: HP_X + 165, minZ: HP_Z - 45, maxZ: HP_Z + 45 }
+        ];
+        console.log('Hidden Palace (D4) placed south @', HP_X, HP_Z);
+
 
         // Gravestones in graveyard (around tomb)
         function addGravestone(x, z) {
@@ -733,6 +1155,7 @@
         makeRoadStrip(-1100, -100, -1100, -300, 40);                       // to arcade house
         makeRoadStrip(START_X, START_Z, ZONE_W * 0.42, 0, 44);             // east Lake approach
         makeRoadStrip(START_X, START_Z, 0, ZONE_L * 0.42, 48);             // south forest/beach
+        makeRoadStrip(0, ZONE_L * 0.3, 180, ZONE_L * 0.36, 40);           // path to hidden palace
         makeRoadStrip(200, 800, ZONE_W * 0.38, ZONE_L * 0.38, 40);         // SE lake
         makeRoadStrip(-200, 800, -ZONE_W * 0.38, ZONE_L * 0.38, 40);       // SW desert
 
@@ -1175,22 +1598,8 @@
             lanternLight: lanternLight,
             starter: [],  // sword/lantern/ocarina are world pickups now
             onSong: function (songId) {
-                // Placeholder tone — real ocarina songs later
-                try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const notes = [523.25, 587.33, 659.25, 783.99];
-                    notes.forEach(function (freq, i) {
-                        const o = ctx.createOscillator();
-                        const g = ctx.createGain();
-                        o.type = 'triangle';
-                        o.frequency.value = freq;
-                        g.gain.value = 0.08;
-                        o.connect(g); g.connect(ctx.destination);
-                        o.start(ctx.currentTime + i * 0.18);
-                        o.stop(ctx.currentTime + i * 0.18 + 0.16);
-                    });
-                } catch (e) {}
-                statusEl.textContent = 'Ocarina: song played (' + songId + ')';
+                if (window._ocarina) window._ocarina.open();
+                else statusEl.textContent = 'Ocarina: ' + songId;
             },
             onLantern: function (on) {
                 statusEl.textContent = on ? 'Lantern ON' : 'Lantern OFF';
@@ -1201,6 +1610,95 @@
                 }
             }
         });
+        window._ocarina = (typeof OcarinaSystemV3 !== 'undefined') ? OcarinaSystemV3.create({
+            getHour: function () { return (typeof sky !== 'undefined' && sky.getHour) ? sky.getHour() : 12; },
+            setHour: function (hr) {
+                if (typeof sky !== 'undefined' && sky.setHour) sky.setHour(hr);
+                if (typeof clock !== 'undefined' && clock.setHour) clock.setHour(hr);
+            },
+            isNight: function () {
+                return (typeof clock !== 'undefined' && clock.isNight) ? clock.isNight() : false;
+            },
+            hasItem: function () { return inventory.has('musicnote'); },
+            playSfx: function (url) {
+                try {
+                    const a = new Audio(url); a.volume = 0.45; a.play().catch(function(){});
+                } catch (e) {}
+            },
+            onMessage: function (msg) { statusEl.textContent = msg; },
+            onSong: function (id, info) {
+                if (id === 'suns_song') console.log("Sun's Song hour", info && info.hour);
+            }
+        }) : null;
+
+        
+        // ---- Field kill tracker → bombs every 10 kills ----
+        window._fieldKillCount = window._fieldKillCount || 0;
+        window._playerInvuln = 0;
+        function onFieldEnemyKilled(enemy) {
+            window._fieldKillCount = (window._fieldKillCount || 0) + 1;
+            const n = window._fieldKillCount;
+            // Drop bomb stack every 10 kills (2–3 bombs)
+            if (n > 0 && n % 10 === 0 && window._bombs) {
+                const pos = (enemy && enemy.mesh) ? enemy.mesh.position
+                    : (enemy && enemy.position) ? enemy.position
+                    : player.position;
+                const stack = 2 + (n % 20 === 0 ? 1 : 0); // every 20th kill: 3 bombs
+                window._bombs.addDrop(pos.x, pos.z, stack);
+                statusEl.textContent = 'Enemy drop — bombs x' + stack + '! (kills: ' + n + ')';
+            }
+        }
+
+        window._bombs = (typeof BombSystemV3 !== 'undefined') ? BombSystemV3.create(scene, {
+            inventory: inventory,
+            getPlayerPos: function () { return player.position; },
+            getCamera: function () { return camera; },
+            blastY: (typeof RoomBuilderV3 !== 'undefined' ? RoomBuilderV3.FLOOR_Y : 0) + 20,
+            onMessage: function (msg) { statusEl.textContent = msg; },
+            onBlast: function (x, z, radius) {
+                // Destroy D2 boulders in range
+                if (window._bombCave) {
+                    let any = false;
+                    window._bombCave.boulders.forEach(function (b) {
+                        if (!b.alive) return;
+                        if (Math.hypot(b.x - x, b.z - z) < radius + b.r * 0.5) {
+                            b.alive = false;
+                            b.mesh.visible = false;
+                            any = true;
+                        }
+                    });
+                    if (any) {
+                        const left = window._bombCave.boulders.filter(function (b) { return b.alive; }).length;
+                        if (left === 0) {
+                            window._bombCave.cleared = true;
+                            statusEl.textContent = 'The boulders are cleared! Bomb Cave is open.';
+                        } else {
+                            statusEl.textContent = 'Boulder destroyed! (' + left + ' remain)';
+                        }
+                    }
+                }
+                // Also clear random field boulders (props with collide near blast)
+                if (typeof treeColliders !== 'undefined') {
+                    for (let i = treeColliders.length - 1; i >= 0; i--) {
+                        const t = treeColliders[i];
+                        if (t.r > 12 && Math.hypot(t.x - x, t.z - z) < radius) {
+                            // soft remove collider only if marked bombable later
+                        }
+                    }
+                }
+            }
+        }) : null;
+
+        // Place pending bomb drops
+        if (window._bombs && window._pendingBombDrops) {
+            window._pendingBombDrops.forEach(function (d) {
+                window._bombs.addDrop(d.x, d.z, d.n);
+            });
+        }
+
+
+
+
         // no starting gear
         const playerState = PlayerStateV3.load();
         playerState.applyInventory(inventory);
@@ -1222,6 +1720,9 @@
 
         // Keyboard: Q = use equipped, E = cycle tools, 1-3 quick equip
         window.addEventListener('keydown', function (ev) {
+            window.keys = window.keys || { attack: false, w: false, a: false, s: false, d: false };
+            const keys = window.keys;
+            if (window._ocarina && window._ocarina.isOpen() && window._ocarina.handleKey(ev)) { ev.preventDefault(); return; }
             if (ev.repeat) return;
             const k = ev.key.toLowerCase();
             if (k === 'q') inventory.use();
@@ -1239,15 +1740,27 @@
             if (k === '1') inventory.equip('woodsword');
             if (k === '2') { inventory.equip('lantern'); inventory.use('lantern'); }
             if (k === '3') { inventory.equip('musicnote'); inventory.use('musicnote'); }
+            if (k === 'j') { keys.attack = true; }
+            if (k === 'b' && !(window._ocarina && window._ocarina.isOpen && window._ocarina.isOpen())) {
+                if (window._bombs) window._bombs.tryPlace();
+            }
+            if (k === 'o') {
+                if (window._ocarina) window._ocarina.toggle();
+                else if (inventory.has('musicnote')) {
+                    inventory.equip('musicnote');
+                    inventory.use('musicnote');
+                } else statusEl.textContent = 'You need the Ocarina (Music Note).';
+            }
         });
 
         // Controls
-        const keys = { w: false, a: false, s: false, d: false };
+        const keys = { attack: false,  w: false, a: false, s: false, d: false };
         let currentDir = 'down';
         let isOverlayOpen = false;
         let isWarping = false;
 
         window.addEventListener('keydown', (e) => {
+            if (window._ocarina && window._ocarina.isOpen() && window._ocarina.handleKey(e)) { e.preventDefault(); return; }
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = true;
 
@@ -1255,6 +1768,7 @@
         });
 
         window.addEventListener('keyup', (e) => {
+            if ((e.key || '').toLowerCase() === 'j') keys.attack = false;
             const k = e.key.toLowerCase();
             if (k in keys) keys[k] = false;
         });
@@ -1353,8 +1867,67 @@
         }
         window.warpTo = warpTo;
 
+
         function checkEnemyCollisions() {
-            // reserved — combat can hook later
+            // Contact damage + sword attack (J) against night spawns / activeEnemies
+            if (!player) return;
+            const px = player.position.x, pz = player.position.z;
+            const attackR = 48;
+            const touchR = 28;
+            const lists = [];
+            if (typeof activeEnemies !== 'undefined') lists.push(activeEnemies);
+            if (typeof nightSpawn !== 'undefined' && nightSpawn.getEnemies) {
+                lists.push(nightSpawn.getEnemies());
+            }
+
+            // Attack pulse
+            if (!window._attackCd) window._attackCd = 0;
+            if (window._attackCd > 0) window._attackCd -= 1 / 60;
+            const swinging = keys.attack && window._attackCd <= 0;
+            if (swinging) window._attackCd = 0.28;
+
+            lists.forEach(function (list) {
+                if (!list || !list.length) return;
+                for (let i = list.length - 1; i >= 0; i--) {
+                    const e = list[i];
+                    if (!e || e.dead) continue;
+                    const mesh = e.mesh || e;
+                    if (!mesh || !mesh.position || mesh.visible === false) continue;
+                    const ex = mesh.position.x, ez = mesh.position.z;
+                    const dist = Math.hypot(px - ex, pz - ez);
+
+                    // Sword hit
+                    if (swinging && dist < attackR) {
+                        if (e.hp == null) e.hp = 3;
+                        e.hp -= 1;
+                        if (mesh.material) {
+                            mesh.material.opacity = 0.4;
+                            setTimeout(function () {
+                                if (mesh.material) mesh.material.opacity = 1;
+                            }, 80);
+                        }
+                        if (e.hp <= 0) {
+                            e.dead = true;
+                            mesh.visible = false;
+                            try { scene.remove(mesh); } catch (err) {}
+                            if (list === activeEnemies) list.splice(i, 1);
+                            else if (e.remove) e.remove();
+                            else if (nightSpawn && nightSpawn.removeEnemy) nightSpawn.removeEnemy(e);
+                            onFieldEnemyKilled(e);
+                        }
+                        continue;
+                    }
+
+                    // Contact hurt player (simple)
+                    if (dist < touchR && window._playerInvuln <= 0) {
+                        window._playerInvuln = 0.9;
+                        if (typeof hpBars !== 'undefined' && hpBars.damage) {
+                            hpBars.damage(player.mesh, 1);
+                        }
+                    }
+                }
+            });
+            if (window._playerInvuln > 0) window._playerInvuln -= 1 / 60;
         }
 
         function checkScreenProximity() {
@@ -1371,7 +1944,7 @@
             } else if (Math.abs(player.position.x) < 80 && player.position.z < -ZONE_L * 0.28) {
                 hudSub.innerHTML = '<span style="color:#aaccff;">[ NORTH — SNOW CREVICE ]</span>';
             } else {
-                hudSub.innerHTML = 'WASD move | ARROWS cam | K/A action | B attack | Q use | E cycle';
+                hudSub.innerHTML = 'WASD move | ARROWS cam | J attack | B bomb | F action | O ocarina';
             }
         }
 
@@ -1399,6 +1972,94 @@
                 Math.abs(p.x - window._oldMan.position.x) < 45 &&
                 Math.abs(p.z - window._oldMan.position.z) < 45) {
                 statusEl.textContent = 'OLD MAN: It is dangerous to go alone! Take this.';
+                return;
+            }
+
+            // Hidden Palace (D4) — south, NIGHT ONLY
+            if (window._hiddenPalace &&
+                Math.abs(p.x - window._hiddenPalace.x) < 90 &&
+                Math.abs(p.z - window._hiddenPalace.z) < 120) {
+                const night = (typeof clock !== 'undefined' && clock.isNight && clock.isNight());
+                if (night && window._hiddenPalace.active) {
+                    warpTo('d_4.html');
+                    return;
+                }
+                statusEl.textContent = night
+                    ? 'Hidden Palace — the door is open (F).'
+                    : 'An empty clearing. Locals whisper of a palace that only appears at night.';
+                return;
+            }
+
+
+
+            // Bomb pickups
+            if (window._bombs && window._bombs.tryPickup(p.x, p.z, 40)) return;
+            // Bomb Cave D2 — east lake — clear boulders with bombs
+            if (window._bombCave &&
+                Math.abs(p.x - window._bombCave.x) < 85 &&
+                Math.abs(p.z - window._bombCave.z) < 85) {
+                if (window._bombCave.cleared) {
+                    warpTo('d_2.html');
+                    return;
+                }
+                statusEl.textContent = 'Boulders seal the cave. Pick up bombs nearby, press B to place.';
+                return;
+            }
+            // Lantern pickup (Ice Palace approach)
+            if (window._lanternPickup && window._lanternPickup.mesh && window._lanternPickup.mesh.visible &&
+                Math.abs(p.x - window._lanternPickup.x) < 45 &&
+                Math.abs(p.z - window._lanternPickup.z) < 45) {
+                inventory.give('lantern');
+                inventory.equip('lantern');
+                window._lanternPickup.mesh.visible = false;
+                statusEl.textContent = 'Picked up LANTERN — the ice may yield to its warmth.';
+                return;
+            }
+            // Ice Palace D3 — requires lantern ON to melt barrier
+            if (window._icePalace &&
+                Math.abs(p.x - window._icePalace.x) < 90 &&
+                Math.abs(p.z - window._icePalace.z) < 90) {
+                const ice = window._icePalace;
+                const hasLantern = inventory.has && inventory.has('lantern');
+                const lit = inventory.isLanternOn && inventory.isLanternOn();
+                if (ice.melted) {
+                    warpTo('d_3.html');
+                    return;
+                }
+                if (!hasLantern) {
+                    statusEl.textContent = 'A solid block of ice seals the palace. You need a lantern to melt it.';
+                    return;
+                }
+                if (!lit) {
+                    statusEl.textContent = 'Equip and light the lantern (2) to melt the ice.';
+                    return;
+                }
+                // Melting in progress — complete on interact while lit
+                ice.melted = true;
+                ice.cube.visible = false;
+                ice.cube.userData.iceBarrier = false;
+                statusEl.textContent = 'The ice melts away! Ice Palace is open.';
+                return;
+            }
+            // Raft pickup on lake shore
+            if (window._raftPickup && window._raftPickup.mesh && window._raftPickup.mesh.visible &&
+                Math.abs(p.x - window._raftPickup.x) < 50 &&
+                Math.abs(p.z - window._raftPickup.z) < 50) {
+                inventory.give('raft');
+                window._raftPickup.mesh.visible = false;
+                statusEl.textContent = 'Picked up RAFT — Meta never got this far.';
+                return;
+            }
+            // Water Palace D5 — NE lake — requires RAFT
+            if (window._waterPalace &&
+                Math.abs(p.x - window._waterPalace.x) < 110 &&
+                Math.abs(p.z - window._waterPalace.z) < 130) {
+                if (inventory.has && inventory.has('raft')) {
+                    warpTo('d_5.html');
+                    return;
+                }
+                statusEl.textContent = (window._waterPalace.plaque || 'Need a raft.') +
+                    ' You stare at the water. Meta stares back.';
                 return;
             }
             // Tomb door → D1 (palace layout)
@@ -1429,6 +2090,65 @@
                 return;
             }
             const _dt = 1 / 60;
+            if (window._lakeWater && window._lakeWater.update) window._lakeWater.update(_dt);
+            if (window._bombs && window._bombs.update) window._bombs.update(_dt);
+
+            if (window._iceWeather && window._iceWeather.update) {
+                window._iceWeather.update(_dt, player && player.position, scene.fog);
+            }
+            // Ice cube melts gradually when lantern is ON nearby
+            if (window._icePalace && !window._icePalace.melted && player && inventory) {
+                const ice = window._icePalace;
+                const near = Math.hypot(player.position.x - ice.x, player.position.z - ice.z) < 100;
+                const lit = inventory.isLanternOn && inventory.isLanternOn();
+                if (near && lit) {
+                    ice.meltProgress = Math.min(1, (ice.meltProgress || 0) + _dt * 0.25);
+                    if (ice.cube && ice.cube.material) {
+                        ice.cube.material.opacity = 0.35 * (1 - ice.meltProgress);
+                    }
+                    if (ice.meltProgress >= 1) {
+                        ice.melted = true;
+                        ice.cube.visible = false;
+                        statusEl.textContent = 'The ice barrier melts completely!';
+                    }
+                }
+            }
+            // Ice collision: block player while frozen
+            // D2 boulder collision
+            if (window._bombCave && player) {
+                window._bombCave.boulders.forEach(function (b) {
+                    if (!b.alive) return;
+                    const dx = player.position.x - b.x;
+                    const dz = player.position.z - b.z;
+                    const dist = Math.hypot(dx, dz);
+                    if (dist < b.r && dist > 0.01) {
+                        const push = (b.r - dist) / dist;
+                        player.position.x += dx * push;
+                        player.position.z += dz * push;
+                    }
+                });
+            }
+            if (window._icePalace && !window._icePalace.melted && player) {
+                const s = window._icePalace.solid;
+                const px = player.position.x, pz = player.position.z;
+                const r = 16;
+                if (px + r > s.minX && px - r < s.maxX && pz + r > s.minZ && pz - r < s.maxZ) {
+                    // push out to nearest edge
+                    const cx = (s.minX + s.maxX) * 0.5;
+                    const cz = (s.minZ + s.maxZ) * 0.5;
+                    const dx = px - cx, dz = pz - cz;
+                    if (Math.abs(dx) > Math.abs(dz)) {
+                        player.position.x = dx > 0 ? s.maxX + r : s.minX - r;
+                    } else {
+                        player.position.z = dz > 0 ? s.maxZ + r : s.minZ - r;
+                    }
+                }
+            }
+
+            if (window._lakeWeather && window._lakeWeather.update) {
+                window._lakeWeather.update(_dt, player && player.position, scene.fog);
+            }
+            if (window._ocarina && window._ocarina.update) window._ocarina.update(_dt);
             autosaveAcc += _dt;
             if (autosaveAcc > 10 && typeof playerState !== 'undefined' && typeof inventory !== 'undefined') {
                 autosaveAcc = 0;
@@ -1446,6 +2166,27 @@
                     background: scene.background
                 });
                 if (typeof clock !== 'undefined') clock.setHour(sky.getHour());
+
+            // Hidden Palace appears only at night (and dusk)
+            if (window._hiddenPalace) {
+                const night = (typeof clock !== 'undefined' && clock.isNight && clock.isNight());
+                const hp = window._hiddenPalace;
+                if (hp.active !== night) {
+                    hp.active = night;
+                    hp.group.visible = night;
+                    if (hp.door && hp.door.material) {
+                        hp.door.material.emissiveIntensity = night ? 0.85 : 0.0;
+                    }
+                    if (night) {
+                        statusEl.textContent = 'The Hidden Palace materializes in the southern woods…';
+                    }
+                }
+                // Soft glow pulse on door at night
+                if (night && hp.door && hp.door.material) {
+                    hp.door.material.emissiveIntensity = 0.55 + 0.35 * Math.sin(performance.now() * 0.004);
+                }
+            }
+
             }
             if (typeof nightSpawn !== 'undefined' && (!optionsMenu || optionsMenu.shouldNightSpawn())) {
                 nightSpawn.update(_dt);

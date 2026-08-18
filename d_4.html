@@ -3,944 +3,604 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Legacy of Chroma - Shadow Palace Dungeon 4 (2.5D Engine)</title>
+  <title>Legacy of Chroma — Shadow Palace (D4)</title>
   <style>
-    @font-face {
-      font-family: 'RetroCGA';
-      src: url('assets/fonts/Px437_IBM_CGA.ttf') format('truetype');
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { overflow: hidden; background: #000; color: #00ff66; font-family: 'RetroCGA', monospace; }
-    #canvas-container { width: 100vw; height: 100vh; }
-    
-    /* RETRO HUD OVERLAY */
+    body { overflow: hidden; background: #020108; color: #c8a0ff; font-family: monospace; }
     #hud {
-      position: absolute; top: 18px; left: 18px; z-index: 20;
-      background: rgba(0, 8, 3, 0.9); padding: 12px 16px;
-      border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3);
-      max-width: 580px;
+      position: absolute; top: 14px; left: 14px; z-index: 20;
+      background: rgba(8,0,16,0.92); border: 2px solid #7a40c0; padding: 10px 14px;
+      max-width: 560px; box-shadow: 0 0 18px rgba(120,40,200,0.35);
     }
-    #hud .title { font-size: 14px; letter-spacing: 0.1em; color: #00ff66; font-weight: bold; }
-    #hud .sub { font-size: 11px; color: #66ff99; margin-top: 4px; line-height: 1.4; }
-    #hearts { margin-top: 6px; letter-spacing: 3px; color: #ff4444; font-size: 14px; }
-    #equip { margin-top: 4px; font-size: 11px; color: #00ff66; }
+    #hud .title { color: #e0b0ff; letter-spacing: 0.1em; font-size: 13px; }
+    #hud .sub { font-size: 10px; color: #9a70c0; margin-top: 4px; line-height: 1.45; }
+    #hearts { margin-top: 6px; color: #f66; letter-spacing: 2px; }
+    #equip { margin-top: 4px; font-size: 11px; color: #d0b8f0; }
     #status {
-      position: absolute; bottom: 12px; left: 18px; z-index: 20;
-      font-size: 11px; color: #00cc55; background: rgba(0,0,0,0.8);
-      padding: 4px 8px; border: 1px solid #005522;
+      position: absolute; bottom: 12px; left: 14px; z-index: 20;
+      font-size: 11px; background: rgba(0,0,0,0.8); padding: 5px 10px;
+      border: 1px solid #503080;
     }
-    
-    /* CRT SCANLINE OVERLAY */
-    .scanlines {
-      pointer-events: none; position: fixed; inset: 0; z-index: 99;
-      background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0, 255, 102, 0.03) 3px);
+    #room-tag {
+      position: absolute; top: 14px; right: 14px; z-index: 20;
+      font-size: 12px; color: #e8c0ff; background: rgba(20,0,40,0.85);
+      padding: 6px 12px; border: 1px solid #8040c0;
+    }
+    .scan {
+      pointer-events: none; position: fixed; inset: 0; z-index: 50;
+      background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(80,0,120,0.04) 3px);
     }
   </style>
-
-  <!-- Three.js Engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-
-  <div class="scanlines"></div>
-
+  <div class="scan"></div>
   <div id="hud">
-    <div class="title">DUNGEON 4: TEMPLE BLUE (2.5D)</div>
+    <div class="title">SHADOW PALACE // D4</div>
     <div class="sub">
-      [A/D] Move &bull; [W/S] Aim High/Low &bull; [SPACE] Jump &bull; [J / B / K] Thrust Attack<br>
-      [F / E] Interact / Chest / Door / Lane &bull; [1-3] Equip Sword &bull; [ESC] Field
+      A/D move · W/S high/low aim · SPACE jump · J thrust<br>
+      F interact / depth door · 1–3 sword · ESC field<br>
+      Three depth lanes — switch only at purple portals
     </div>
-    <div id="hearts">&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;</div>
-    <div id="equip">EQUIPPED: Wood Sword (1 dmg) &bull; Keys: 0 &bull; Kills: 0</div>
+    <div id="hearts">♥♥♥♥♥♥♥♥</div>
+    <div id="equip">Weapon: Wood Sword · Keys: 0 · Kills: 0 · Lane: FRONT</div>
   </div>
+  <div id="room-tag">Entrance Hall</div>
+  <div id="status">Loading Shadow Palace…</div>
 
-  <div id="status">X:0 Y:0 Lane:0 Grounded:true HP:8/8</div>
-  <div id="canvas-container"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="src/engine/Three_js_system/sidescroll_physics_v3.js"></script>
+  <script src="src/engine/Three_js_system/zelda2_combat_v3.js"></script>
+  <script src="src/engine/Three_js_system/depth_stack_v3.js"></script>
+  <script src="src/engine/Three_js_system/audio_system_v3.js"></script>
+  <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
 
-  <!-- ENGINE MODULES INJECTION -->
   <script>
-    // -------------------------------------------------------------------------
-    // 1. AudioSystemV3
-    // -------------------------------------------------------------------------
-    window.AudioSystemV3 = (function () {
-      function create(options) {
-        options = options || {};
-        let music = null;
-        let currentTrack = '';
-        const sfxCache = Object.create(null);
-        const musicVol = options.musicVolume != null ? options.musicVolume : 0.4;
-        const sfxVol = options.sfxVolume != null ? options.sfxVolume : 0.5;
+  (function () {
+    const statusEl = document.getElementById('status');
+    const heartsEl = document.getElementById('hearts');
+    const equipEl = document.getElementById('equip');
+    const roomTag = document.getElementById('room-tag');
 
-        return {
-          playMusic: function (url, opts) {
-            opts = opts || {};
-            if (!url || (currentTrack === url && music && !music.paused)) return;
-            this.stopMusic();
-            try {
-              music = new Audio(url);
-              music.loop = opts.loop !== false;
-              music.volume = opts.volume != null ? opts.volume : musicVol;
-              currentTrack = url;
-              const p = music.play();
-              if (p && p.catch) p.catch(() => {});
-            } catch (e) {}
-          },
-          stopMusic: function () {
-            if (music) { try { music.pause(); music.src = ''; } catch (e) {} }
-            music = null; currentTrack = '';
-          },
-          sfx: function (url, opts) {
-            opts = opts || {};
-            if (!url) return;
-            try {
-              let a = sfxCache[url];
-              if (!a || opts.noCache) {
-                a = new Audio(url);
-                if (!opts.noCache) sfxCache[url] = a;
-              }
-              a.volume = opts.volume != null ? opts.volume : sfxVol;
-              a.currentTime = 0;
-              const p = a.play();
-              if (p && p.catch) p.catch(() => {});
-            } catch (e) {}
-          }
-        };
+    // ---- Fail soft if modules missing ----
+    if (typeof SidescrollPhysicsV3 === 'undefined' || typeof Zelda2CombatV3 === 'undefined') {
+      statusEl.textContent = 'Missing sidescroll/zelda2 modules — copy from src/engine/Three_js_system/';
+      return;
+    }
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060210);
+    scene.fog = new THREE.FogExp2(0x120820, 0.0014);
+
+    const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 3000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0x4a3080, 0.55));
+    scene.add(new THREE.HemisphereLight(0x8866cc, 0x1a1020, 0.4));
+    const torch = new THREE.PointLight(0xaa66ff, 1.15, 420);
+    scene.add(torch);
+    const fill = new THREE.DirectionalLight(0xccbbff, 0.25);
+    fill.position.set(40, 120, 80);
+    scene.add(fill);
+
+    const loader = new THREE.TextureLoader();
+    const audio = (typeof AudioSystemV3 !== 'undefined')
+      ? AudioSystemV3.create({ musicVolume: 0.36, sfxVolume: 0.5 }) : null;
+    const inv = (typeof InventorySystemV3 !== 'undefined')
+      ? InventorySystemV3.create({ starter: ['woodsword'] }) : null;
+    if (inv) inv.equip('woodsword');
+
+    let musicOn = false;
+    function startMusic() {
+      if (musicOn || !audio) return;
+      musicOn = true;
+      audio.playMusic('assets/music/21 Dark Golden Land.mp3');
+    }
+
+    // ============================================================
+    // SHADOW PALACE LAYOUT — 3 depth lanes
+    // Lane 0 FRONT (z=50), 1 MID (z=0), 2 BACK (z=-50)
+    // ============================================================
+    const LANE_Z = [50, 0, -50];
+    const LANE_NAME = ['FRONT', 'MID', 'BACK'];
+
+    // Wide palace: entrance → gap → mid climb → locked gate → upper → boss ante
+    const lanes = [
+      {
+        z: LANE_Z[0],
+        pitY: -280,
+        platforms: [
+          // Entrance floor
+          { x0: -80, x1: 220, y: 0 },
+          // Gap then far floor
+          { x0: 280, x1: 520, y: 0 },
+          // Mid platforms climb
+          { x0: 340, x1: 420, y: 70 },
+          { x0: 430, x1: 520, y: 130 },
+          // High bridge to gate
+          { x0: 520, x1: 700, y: 130 },
+          // After gate (unlocked area)
+          { x0: 720, x1: 980, y: 130 },
+          // Drop to lower east
+          { x0: 820, x1: 1100, y: 0 },
+          // Boss ante ledge
+          { x0: 1100, x1: 1280, y: 40 }
+        ],
+        walls: [
+          { x: -78, y0: 0, y1: 200 },
+          { x: 1278, y0: 0, y1: 220 }
+        ]
+      },
+      {
+        z: LANE_Z[1],
+        pitY: -280,
+        platforms: [
+          { x0: -40, x1: 180, y: 20 },
+          { x0: 200, x1: 360, y: 20 },
+          { x0: 250, x1: 320, y: 90 },
+          { x0: 360, x1: 560, y: 60 },
+          { x0: 560, x1: 720, y: 120 },
+          { x0: 740, x1: 960, y: 40 },
+          { x0: 960, x1: 1200, y: 40 },
+          // Floating mid-only secret ledge
+          { x0: 600, x1: 680, y: 200 }
+        ],
+        walls: []
+      },
+      {
+        z: LANE_Z[2],
+        pitY: -280,
+        platforms: [
+          { x0: 0, x1: 160, y: 40 },
+          { x0: 180, x1: 400, y: 40 },
+          { x0: 300, x1: 380, y: 110 },
+          { x0: 420, x1: 620, y: 80 },
+          { x0: 650, x1: 900, y: 20 },
+          { x0: 920, x1: 1150, y: 80 },
+          // Shadow walkway above
+          { x0: 700, x1: 860, y: 180 }
+        ],
+        walls: []
       }
-      return { create: create };
-    })();
-
-    // -------------------------------------------------------------------------
-    // 2. InventorySystemV3
-    // -------------------------------------------------------------------------
-    window.InventorySystemV3 = (function () {
-      const CATALOG = {
-        woodsword:   { name: 'Wood Sword', slot: 'weapon', damage: 1, icon: 'assets/inventory/WOODSWORD-1.png' },
-        metalsword:  { name: 'Metal Sword', slot: 'weapon', damage: 2, icon: 'assets/inventory/METALSWORD.png' },
-        plasmasword: { name: 'Plasma Sword', slot: 'weapon', damage: 3, icon: 'assets/inventory/PLASMASWORD.png' },
-        lantern:     { name: 'Lantern', slot: 'tool', icon: 'assets/inventory/LANTERN-1.png' },
-        smallkey:    { name: 'Small Key', slot: 'key', icon: 'assets/inventory/SMALL KEY.png' }
-      };
-
-      function weaponDamage(id) {
-        return (CATALOG[id] && CATALOG[id].damage) ? CATALOG[id].damage : 1;
-      }
-
-      function create(options) {
-        options = options || {};
-        const items = Object.create(null);
-        let equipped = 'woodsword';
-
-        const api = {
-          give: function (id, count) {
-            count = count || 1;
-            items[id] = (items[id] || 0) + count;
-          },
-          take: function (id, count) {
-            count = count || 1;
-            if (items[id]) items[id] = Math.max(0, items[id] - count);
-          },
-          has: function (id) { return (items[id] || 0) > 0; },
-          count: function (id) { return items[id] || 0; },
-          equip: function (id) {
-            if (CATALOG[id]) {
-              equipped = id;
-              if (options.onEquip) options.onEquip(id);
-            }
-          },
-          getEquipped: function () { return equipped; },
-          toJSON: function() { return { items: items, equipped: equipped }; },
-          fromJSON: function(data) {
-            if (!data) return;
-            if (data.items) Object.assign(items, data.items);
-            if (data.equipped) equipped = data.equipped;
-          }
-        };
-
-        if (options.starter) {
-          options.starter.forEach(id => api.give(id));
-        }
-        return api;
-      }
-
-      return { create: create, CATALOG: CATALOG, weaponDamage: weaponDamage };
-    })();
-
-    // -------------------------------------------------------------------------
-    // 3. PlayerStateV3
-    // -------------------------------------------------------------------------
-    (function (global) {
-      const STORAGE_KEY = 'neondromeda_player_v1';
-      const VERSION = 1;
-
-      function defaultState() {
-        return {
-          v: VERSION, hp: 8, maxHp: 8,
-          inventory: { items: {}, equipped: 'woodsword' },
-          flags: {}, keys: 0, rupees: 0, lastRoom: 'd_4.html', lastPos: null, updatedAt: Date.now()
-        };
-      }
-
-      function load() {
-        let data = defaultState();
-        try {
-          const raw = global.localStorage && localStorage.getItem(STORAGE_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object') data = Object.assign(defaultState(), parsed);
-          }
-        } catch (e) {}
-        return apiFrom(data);
-      }
-
-      function apiFrom(data) {
-        return {
-          data: data,
-          save: function () {
-            data.updatedAt = Date.now();
-            try { if (global.localStorage) localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-            return this;
-          },
-          getHp: function () { return data.hp; },
-          getMaxHp: function () { return data.maxHp; },
-          setHp: function (hp, maxHp) {
-            if (maxHp != null) data.maxHp = maxHp;
-            data.hp = Math.max(0, Math.min(data.maxHp, hp));
-            return this;
-          }
-        };
-      }
-
-      global.PlayerStateV3 = { load: load, defaultState: defaultState };
-    })(window);
-
-    // -------------------------------------------------------------------------
-    // 4. SidescrollPhysicsV3
-    // -------------------------------------------------------------------------
-    window.SidescrollPhysicsV3 = (function () {
-      const GRAVITY = -900;
-      const WALK_ACCEL = 1400;
-      const FRICTION = 0.82;
-      const JUMP_VELOCITY = 380;
-      const DOOR_RADIUS = 35;
-
-      function create(options) {
-        options = options || {};
-        const lanes = options.lanes || [];
-        const laneDoors = options.laneDoors || [];
-
-        const state = {
-          x: options.startX || 0, y: options.startY || 0,
-          vx: 0, vy: 0, lane: options.startLane || 0,
-          facingRight: true, crouching: false, grounded: false,
-          nearDoor: null, prevInteract: false, dead: false
-        };
-
-        return {
-          get x() { return state.x; },
-          get y() { return state.y; },
-          get vx() { return state.vx; },
-          get vy() { return state.vy; },
-          get lane() { return state.lane; },
-          get facingRight() { return state.facingRight; },
-          get facing() { return state.facingRight ? 'right' : 'left'; },
-          get crouching() { return state.crouching; },
-          get grounded() { return state.grounded; },
-          get nearDoor() { return state.nearDoor; },
-          get dead() { return state.dead; },
-
-          applyKnockback: function(kx, ky) {
-            state.vx += kx;
-            state.vy += ky;
-          },
-
-          update: function (dt, keys) {
-            if (state.dead) return;
-
-            const moveLeft = !!keys.left;
-            const moveRight = !!keys.right;
-            const crouchKey = !!keys.down;
-            const jumpKey = !!keys.jump;
-
-            state.crouching = state.grounded && crouchKey;
-
-            if (!state.crouching) {
-              if (moveLeft && !moveRight) {
-                state.vx -= WALK_ACCEL * dt;
-                state.facingRight = false;
-              } else if (moveRight && !moveLeft) {
-                state.vx += WALK_ACCEL * dt;
-                state.facingRight = true;
-              } else {
-                state.vx *= FRICTION;
-              }
-            } else {
-              state.vx *= FRICTION;
-            }
-
-            if (jumpKey && state.grounded && !state.crouching) {
-              state.vy = JUMP_VELOCITY;
-              state.grounded = false;
-            }
-
-            state.vy += GRAVITY * dt;
-            state.x += state.vx * dt;
-            state.y += state.vy * dt;
-
-            const lane = lanes[state.lane];
-            state.grounded = false;
-
-            if (lane && lane.platforms) {
-              for (let i = 0; i < lane.platforms.length; i++) {
-                const p = lane.platforms[i];
-                if (state.x >= p.x0 && state.x <= p.x1) {
-                  if (state.vy <= 0 && state.y <= p.y && (state.y - state.vy * dt) >= p.y - 12) {
-                    state.y = p.y;
-                    state.vy = 0;
-                    state.grounded = true;
-                    break;
-                  }
-                }
-              }
-            }
-
-            if (lane && lane.pitY != null && state.y < lane.pitY) {
-              state.dead = true;
-              if (options.onFallDeath) options.onFallDeath();
-              return;
-            }
-
-            state.nearDoor = null;
-            if (laneDoors) {
-              for (let i = 0; i < laneDoors.length; i++) {
-                const d = laneDoors[i];
-                if (d.fromLane !== state.lane) continue;
-                if (Math.abs(state.x - d.x) <= DOOR_RADIUS) {
-                  state.nearDoor = d;
-                  break;
-                }
-              }
-            }
-
-            const interactPressed = !!(keys.interact || keys.switchDepth);
-            if (interactPressed && !state.prevInteract && state.nearDoor) {
-              const d = state.nearDoor;
-              state.lane = d.toLane;
-              state.x = d.landX != null ? d.landX : state.x;
-              state.y = d.landY != null ? d.landY : state.y;
-              state.vx = 0; state.vy = 0;
-              state.grounded = false;
-              state.nearDoor = null;
-              if (options.onLaneShift) options.onLaneShift(d.fromLane, d.toLane);
-            }
-            state.prevInteract = interactPressed;
-          }
-        };
-      }
-
-      return { create: create };
-    })();
-
-    // -------------------------------------------------------------------------
-    // 5. Zelda2CombatV3 (Sidescroll Combat with Dynamic Weapon Damage)
-    // -------------------------------------------------------------------------
-    (function (global) {
-      const THRUST_DURATION = 0.20;
-      const THRUST_COOLDOWN = 0.15;
-      const THRUST_REACH = 34;
-      const THRUST_RANGE = 24;
-      const PLAYER_RADIUS = 14;
-      const ENEMY_RADIUS = 16;
-      const INVULN_DURATION = 0.8;
-      const KNOCKBACK = 120;
-
-      const HITBOX_Y_OFFSET = { high: 28, standing: 18, low: 6, jump: -4 };
-
-      function create(physics, options) {
-        options = options || {};
-        const state = {
-          health: options.maxHealth || 8, maxHealth: options.maxHealth || 8,
-          weaponDamage: options.weaponDamage || 1,
-          dead: false, attacking: false, attackForm: 'standing',
-          attackTimer: 0, attackCooldown: 0, invulnTimer: 0, prevAttackKey: false
-        };
-
-        function applyDamageToPlayer(fromX) {
-          state.health -= 1;
-          state.invulnTimer = INVULN_DURATION;
-          const dir = physics.x >= fromX ? 1 : -1;
-          if (physics.applyKnockback) physics.applyKnockback(dir * KNOCKBACK, 160);
-          if (options.onDamage) options.onDamage(Math.max(state.health, 0), state.maxHealth);
-          if (state.health <= 0 && !state.dead) {
-            state.dead = true;
-            if (options.onDeath) options.onDeath();
-          }
-        }
-
-        return {
-          getHealth: () => state.health,
-          getMaxHealth: () => state.maxHealth,
-          heal: (amount) => {
-            state.health = Math.min(state.maxHealth, state.health + (amount || 1));
-            if (options.onDamage) options.onDamage(state.health, state.maxHealth);
-          },
-          setWeaponDamage: (dmg) => { state.weaponDamage = dmg || 1; },
-          isAttacking: () => state.attacking,
-          getAttackForm: () => state.attackForm,
-          update: function (dt, keys, enemies) {
-            if (state.dead) return;
-            dt = dt || 0.016;
-
-            if (state.attackCooldown > 0) state.attackCooldown -= dt;
-            if (state.invulnTimer > 0) state.invulnTimer -= dt;
-
-            const attackKey = !!(keys.attack || keys.attackAlt1 || keys.attackAlt2);
-            if (attackKey && !state.prevAttackKey && state.attackCooldown <= 0 && !state.attacking) {
-              state.attacking = true;
-              state.attackTimer = THRUST_DURATION;
-              state.attackCooldown = THRUST_COOLDOWN;
-
-              if (!physics.grounded) {
-                state.attackForm = 'jump';
-              } else if (keys.up) {
-                state.attackForm = 'high';
-              } else if (keys.down || physics.crouching) {
-                state.attackForm = 'low';
-              } else {
-                state.attackForm = 'standing';
-              }
-            }
-            state.prevAttackKey = attackKey;
-
-            if (state.attacking) {
-              state.attackTimer -= dt;
-              if (state.attackTimer <= 0) {
-                state.attacking = false;
-              } else if (enemies && enemies.length) {
-                const dir = physics.facing === 'right' ? 1 : -1;
-                const hitX = physics.x + dir * THRUST_REACH;
-                const hitY = physics.y + (HITBOX_Y_OFFSET[state.attackForm] || 18);
-                for (let i = enemies.length - 1; i >= 0; i--) {
-                  const e = enemies[i];
-                  if (!e || e.dead || e.lane !== physics.lane) continue;
-                  const dx = e.x - hitX;
-                  const dy = e.y - hitY;
-                  const r = THRUST_RANGE + (e.radius || ENEMY_RADIUS);
-                  if (Math.sqrt(dx * dx + dy * dy) <= r) {
-                    e.hp = (e.hp || 1) - state.weaponDamage;
-                    if (options.onEnemyHit) options.onEnemyHit(e);
-                    if (e.hp <= 0) {
-                      e.dead = true;
-                      if (options.onKillEnemy) options.onKillEnemy(e);
-                    }
-                  }
-                }
-              }
-            }
-
-            if (state.invulnTimer <= 0 && enemies && enemies.length) {
-              for (let i = 0; i < enemies.length; i++) {
-                const e = enemies[i];
-                if (!e || e.dead || e.lane !== physics.lane) continue;
-                const dx = e.x - physics.x;
-                const dy = e.y - (physics.y + 16);
-                const r = PLAYER_RADIUS + (e.radius || ENEMY_RADIUS);
-                if (Math.sqrt(dx * dx + dy * dy) <= r) {
-                  applyDamageToPlayer(e.x);
-                  break;
-                }
-              }
-            }
-          }
-        };
-      }
-
-      global.Zelda2CombatV3 = { create: create };
-    })(window);
-
-    // -------------------------------------------------------------------------
-    // 6. SpriteSystemV3
-    // -------------------------------------------------------------------------
-    (function (global) {
-      function prep(tex) {
-        if (!tex) return tex;
-        tex.magFilter = THREE.NearestFilter;
-        tex.minFilter = THREE.NearestFilter;
-        tex.generateMipmaps = false;
-        return tex;
-      }
-
-      function create(options) {
-        options = options || {};
-        const loader = options.loader || new THREE.TextureLoader();
-        const texMap = {};
-        const raw = options.textures || {};
-
-        function loadList(list) {
-          if (!Array.isArray(list)) list = [list];
-          return list.map(item => typeof item === 'string' ? prep(loader.load(item)) : prep(item));
-        }
-
-        if (Array.isArray(raw)) {
-          texMap.down = loadList(raw);
-          texMap.up = texMap.down; texMap.left = texMap.down; texMap.right = texMap.down;
-        } else {
-          ['down', 'up', 'left', 'right'].forEach(dir => {
-            texMap[dir] = loadList(raw[dir] || raw.down || []);
-          });
-        }
-
-        const mat = new THREE.MeshBasicMaterial({
-          map: texMap.down[0] || null, transparent: true, side: THREE.DoubleSide, depthWrite: true
-        });
-
-        const w = options.width || 40, h = options.height || 40;
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-
-        return {
-          mesh: mesh, material: mat, width: w, height: h,
-          radius: w * 0.45,
-          faceCamera: function (cam) { mesh.lookAt(cam.position.x, mesh.position.y, cam.position.z); }
-        };
-      }
-
-      function createPlayer(loader, options) {
-        return create({
-          loader: loader, width: 45, height: 45,
-          textures: {
-            up:    ['assets/player/NORTH.png', 'assets/player/VRMANBACK.png'],
-            down:  ['assets/player/SOUTH.png', 'assets/player/VRMANBACK.png'],
-            left:  ['assets/player/WEST.png', 'assets/player/VRMANL.png'],
-            right: ['assets/player/EAST.png', 'assets/player/VRMANR.png']
-          }
-        });
-      }
-
-      function createEnemy(texPath, loader, options) {
-        options = options || {};
-        return create({
-          loader: loader, width: options.width || 40, height: options.height || 40,
-          textures: Array.isArray(texPath) ? texPath : [texPath]
-        });
-      }
-
-      global.SpriteSystemV3 = { create: create, createPlayer: createPlayer, createEnemy: createEnemy };
-    })(window);
-
-    // -------------------------------------------------------------------------
-    // 7. HpBarSystemV3 (Canvas Texture Dynamic Fallback)
-    // -------------------------------------------------------------------------
-    (function (global) {
-      function create(scene, loader) {
-        loader = loader || new THREE.TextureLoader();
-        const cache = {}, entries = [];
-
-        function generateBarTexture(current, max) {
-          const key = `gen_${current}_${max}`;
-          if (cache[key]) return cache[key];
-
-          const canvas = document.createElement('canvas');
-          canvas.width = 64; canvas.height = 12;
-          const ctx = canvas.getContext('2d');
-
-          ctx.fillStyle = '#000000';
-          ctx.fillRect(0, 0, 64, 12);
-          ctx.strokeStyle = '#00ff66';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(1, 1, 62, 10);
-
-          const pct = Math.max(0, Math.min(1, current / max));
-          ctx.fillStyle = pct > 0.5 ? '#00ff66' : pct > 0.25 ? '#ffcc00' : '#ff3333';
-          ctx.fillRect(3, 3, Math.floor(58 * pct), 6);
-
-          const tex = new THREE.CanvasTexture(canvas);
-          tex.magFilter = THREE.NearestFilter;
-          tex.minFilter = THREE.NearestFilter;
-          cache[key] = tex;
-          return tex;
-        }
-
-        return {
-          attach: function (target, opts) {
-            opts = opts || {};
-            const max = opts.max != null ? opts.max : 3;
-            const current = opts.current != null ? opts.current : max;
-            const mat = new THREE.MeshBasicMaterial({
-              map: generateBarTexture(current, max), transparent: true, depthWrite: false, side: THREE.DoubleSide
-            });
-            const bar = new THREE.Mesh(new THREE.PlaneGeometry(opts.width || 36, opts.height || 8), mat);
-            scene.add(bar);
-            const entry = { target: target, bar: bar, max: max, current: current, offsetY: opts.offsetY || 36 };
-            entries.push(entry);
-            target.userData = target.userData || {};
-            target.userData.hpBar = entry;
-            return entry;
-          },
-          set: function (target, current) {
-            const e = target.userData && target.userData.hpBar; if (!e) return;
-            e.current = Math.max(0, Math.min(e.max, current | 0));
-            e.bar.material.map = generateBarTexture(e.current, e.max);
-            e.bar.material.needsUpdate = true;
-            e.bar.visible = e.current > 0;
-          },
-          update: function (camera) {
-            entries.forEach(e => {
-              if (!e.target) return;
-              e.bar.position.set(e.target.position.x, e.target.position.y + e.offsetY, e.target.position.z);
-              e.bar.lookAt(camera.position.x, e.bar.position.y, camera.position.z);
-            });
-          }
-        };
-      }
-      global.HpBarSystemV3 = { create: create };
-    })(window);
-
-    // -------------------------------------------------------------------------
-    // 8. Collision & Depth Systems
-    // -------------------------------------------------------------------------
-    (function (global) {
-      global.CollisionSystemV3 = {
-        create: function () {
-          return {
-            resolveEntityOverlaps: function (player, enemies) {
-              if (!player || !player.mesh || !enemies) return;
-              const ppos = player.mesh.position, pr = player.radius || 18;
-              enemies.forEach(e => {
-                if (!e || !e.mesh || e.dead) return;
-                const opos = e.mesh.position, er = e.radius || 18;
-                let dx = opos.x - ppos.x, dz = opos.z - ppos.z;
-                let dist = Math.sqrt(dx * dx + dz * dz) || 0.0001;
-                if (dist < pr + er) {
-                  const pen = (pr + er - dist) + 0.1;
-                  ppos.x -= (dx / dist) * pen * 0.5;
-                  opos.x += (dx / dist) * pen * 0.5;
-                }
-              });
-            }
-          };
-        }
-      };
-
-      global.DepthStackV3 = {
-        buildColorLayers: function (scene, layerDefs) {
-          const group = new THREE.Group();
-          layerDefs.forEach(def => {
-            const mat = new THREE.MeshBasicMaterial({ color: def.color, side: THREE.DoubleSide });
-            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(def.width, def.height), mat);
-            mesh.position.set(def.x || 0, def.y != null ? def.y : def.height * 0.5, def.z);
-            group.add(mesh);
-          });
-          scene.add(group);
-        }
-      };
-    })(window);
-  </script>
-
-  <!-- MAIN ENGINE INSTANTIATION & RENDER LOOP -->
-  <script>
-    (function () {
-      const container = document.getElementById('canvas-container');
-      const statusEl = document.getElementById('status');
-      const heartsEl = document.getElementById('hearts');
-      const equipEl = document.getElementById('equip');
-
-      window._kills = 0;
-
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x010814);
-      scene.fog = new THREE.FogExp2(0x010814, 0.0016);
-
-      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer.domElement);
-
-      const textureLoader = new THREE.TextureLoader();
-
+    ];
+
+    // Depth portals (lane doors)
+    const laneDoors = [
+      { x: 60, fromLane: 0, toLane: 1, landX: 60, landY: 20 },
+      { x: 60, fromLane: 1, toLane: 0, landX: 60, landY: 0 },
+      { x: 60, fromLane: 1, toLane: 2, landX: 60, landY: 40 },
+      { x: 60, fromLane: 2, toLane: 1, landX: 60, landY: 20 },
+      // Mid palace depth swap
+      { x: 400, fromLane: 0, toLane: 1, landX: 400, landY: 60 },
+      { x: 400, fromLane: 1, toLane: 0, landX: 400, landY: 0 },
+      { x: 400, fromLane: 1, toLane: 2, landX: 400, landY: 80 },
+      { x: 400, fromLane: 2, toLane: 1, landX: 400, landY: 60 },
+      // East
+      { x: 900, fromLane: 0, toLane: 1, landX: 900, landY: 40 },
+      { x: 900, fromLane: 1, toLane: 0, landX: 900, landY: 0 },
+      { x: 900, fromLane: 1, toLane: 2, landX: 900, landY: 80 },
+      { x: 900, fromLane: 2, toLane: 1, landX: 900, landY: 40 }
+    ];
+
+    // ---- Visual depth layers (parallax walls) ----
+    if (typeof DepthStackV3 !== 'undefined') {
       DepthStackV3.buildColorLayers(scene, [
-        { z: -300, color: 0x030d1c, width: 1600, height: 600, y: 100 },
-        { z: -150, color: 0x08182b, width: 1400, height: 500, y: 80 }
+        { z: -180, color: 0x140820, width: 1600, height: 420, y: 120, x: 500 },
+        { z: -120, color: 0x1c1030, width: 1500, height: 360, y: 100, x: 500 },
+        { z: -70, color: 0x281848, width: 1400, height: 300, y: 90, x: 500 }
       ]);
+    } else {
+      const bg = new THREE.Mesh(
+        new THREE.PlaneGeometry(1600, 400),
+        new THREE.MeshBasicMaterial({ color: 0x180c28 })
+      );
+      bg.position.set(500, 100, -150);
+      scene.add(bg);
+    }
 
-      const ambientLight = new THREE.AmbientLight(0x224466, 1.4);
-      scene.add(ambientLight);
-
-      const torchLight = new THREE.PointLight(0x00aaff, 2.8, 400);
-      scene.add(torchLight);
-
-      function cropTileTexture(atlasUrl, sx, sy, sw, sh, repeatX, repeatY) {
-        const canvas = document.createElement('canvas');
-        canvas.width = sw; canvas.height = sh;
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
-
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.magFilter = THREE.NearestFilter;
-        tex.minFilter = THREE.NearestFilter;
-
-        const img = new Image();
-        img.onload = function () {
-          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-          tex.needsUpdate = true;
-          if (repeatX && repeatY) tex.repeat.set(repeatX, repeatY);
-        };
-        img.src = atlasUrl;
-        return tex;
-      }
-
-      const atlasPath = 'assets/tilesets/temple_blue/temple_blue.tiles.png';
-      const wallMat = new THREE.MeshStandardMaterial({ map: cropTileTexture(atlasPath, 128, 272, 16, 16, 16, 2), roughness: 0.8 });
-      const floorMat = new THREE.MeshStandardMaterial({ map: cropTileTexture(atlasPath, 208, 96, 16, 16, 8, 2), roughness: 0.8 });
-
-      const audio = AudioSystemV3.create({ musicVolume: 0.3, sfxVolume: 0.5 });
-      const playerState = PlayerStateV3.load();
-
-      function paintHearts(hp, max) {
-        let hStr = '';
-        for (let i = 0; i < max; i++) hStr += (i < hp) ? '&hearts;' : '&#9825;';
-        heartsEl.innerHTML = hStr;
-      }
-
-      function paintEquip() {
-        const id = inv ? inv.getEquipped() : 'woodsword';
-        const dmg = InventorySystemV3.weaponDamage(id);
-        const name = (InventorySystemV3.CATALOG[id] || {}).name || id;
-        const keysN = inv ? inv.count('smallkey') : 0;
-        equipEl.innerHTML = `EQUIPPED: ${name} (${dmg} dmg) &bull; Keys: ${keysN} &bull; Kills: ${window._kills}`;
-        if (combat) combat.setWeaponDamage(dmg);
-      }
-
-      const inv = InventorySystemV3.create({
-        starter: ['woodsword'],
-        onEquip: function () { paintEquip(); }
-      });
-
-      const hpBars = HpBarSystemV3.create(scene, textureLoader);
-
-      const LANE_FRONT_Z = 40;
-      const LANE_BACK_Z = -40;
-
-      const lanes = [
-        { z: LANE_FRONT_Z, pitY: -300, platforms: [{ x0: -400, x1: 150, y: 0 }, { x0: 220, x1: 650, y: 0 }, { x0: 100, x1: 300, y: 80 }] },
-        { z: LANE_BACK_Z, pitY: -300, platforms: [{ x0: -300, x1: 500, y: 20 }, { x0: -150, x1: 50, y: 100 }] }
-      ];
-
-      const laneDoors = [
-        { x: 120, fromLane: 0, toLane: 1, landX: 120, landY: 20 },
-        { x: 120, fromLane: 1, toLane: 0, landX: 120, landY: 0 }
-      ];
-
-      const physics = SidescrollPhysicsV3.create({
-        lanes: lanes, laneDoors: laneDoors, startX: -300, startY: 10, startLane: 0,
-        onLaneShift: () => audio.sfx('assets/fanfare/door.wav')
-      });
-
-      const combat = Zelda2CombatV3.create(physics, {
-        maxHealth: playerState.getMaxHp(),
-        weaponDamage: InventorySystemV3.weaponDamage('woodsword'),
-        onDamage: (hp, max) => {
-          audio.sfx('assets/fanfare/hit.wav');
-          paintHearts(hp, max);
-          hpBars.set(playerSprite.mesh, hp);
-        },
-        onEnemyHit: (enemy) => {
-          audio.sfx('assets/music/$84-Scratch.wav');
-          hpBars.set(enemy.mesh, enemy.hp);
-        },
-        onKillEnemy: (enemy) => {
-          window._kills += 1;
-          audio.sfx('assets/fanfare/kill.wav');
-          if (enemy.mesh) enemy.mesh.visible = false;
-          paintEquip();
-        }
-      });
-
-      paintHearts(combat.getHealth(), combat.getMaxHealth());
-
-      // Map Floors and Background
-      lanes.forEach(lane => {
-        lane.platforms.forEach(p => {
+    // Platform meshes per lane (tint by depth)
+    const laneColors = [0x6a40a0, 0x503080, 0x3a2060];
+    function buildPlatformVisuals() {
+      lanes.forEach(function (lane, li) {
+        lane.platforms.forEach(function (p) {
           const w = p.x1 - p.x0;
-          const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 20, 40), floorMat);
-          mesh.position.set(p.x0 + w / 2, p.y - 10, lane.z);
+          const mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(w, 10, 28),
+            new THREE.MeshStandardMaterial({
+              color: laneColors[li],
+              roughness: 0.85,
+              metalness: 0.1,
+              emissive: 0x1a0840,
+              emissiveIntensity: 0.15
+            })
+          );
+          mesh.position.set((p.x0 + p.x1) * 0.5, p.y - 5, lane.z);
           scene.add(mesh);
         });
       });
+    }
+    buildPlatformVisuals();
 
-      const backWallMesh = new THREE.Mesh(new THREE.PlaneGeometry(1400, 500), wallMat);
-      backWallMesh.position.set(100, 100, -80);
-      scene.add(backWallMesh);
+    // Portal markers (visible at door x positions unique)
+    const portalXs = [60, 400, 900];
+    portalXs.forEach(function (px) {
+      LANE_Z.forEach(function (z, li) {
+        const m = new THREE.Mesh(
+          new THREE.BoxGeometry(14, 48, 8),
+          new THREE.MeshBasicMaterial({
+            color: 0xcc66ff,
+            transparent: true,
+            opacity: 0.55 + li * 0.1
+          })
+        );
+        m.position.set(px, 28, z);
+        scene.add(m);
+      });
+    });
 
-      // Player Entity
-      const playerSprite = SpriteSystemV3.createPlayer(textureLoader);
-      scene.add(playerSprite.mesh);
-      hpBars.attach(playerSprite.mesh, { max: 8, current: combat.getHealth(), offsetY: 30 });
+    // Locked gate on FRONT at x~710 (blocks until key)
+    let gateOpen = false;
+    const gateMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(16, 90, 36),
+      new THREE.MeshStandardMaterial({ color: 0x442266, emissive: 0x220044, emissiveIntensity: 0.3 })
+    );
+    gateMesh.position.set(710, 175, LANE_Z[0]);
+    scene.add(gateMesh);
 
-      // Enemy Entities
-      const slimeSprite = SpriteSystemV3.createEnemy('assets/enemies/SLIME-1.png', textureLoader, { width: 32, height: 32 });
-      scene.add(slimeSprite.mesh);
+    // ---- Physics ----
+    const physics = SidescrollPhysicsV3.create({
+      startX: 20,
+      startY: 40,
+      startLane: 0
+    });
 
-      const enemies = [
-        { x: 300, y: 10, lane: 0, dead: false, hp: 3, maxHp: 3, radius: 15, mesh: slimeSprite.mesh }
-      ];
-      hpBars.attach(slimeSprite.mesh, { max: 3, current: 3, offsetY: 24 });
-
-      // Interactables (Chests, Jars, Doors)
-      const interactables = [];
-
-      function createProp(type, x, y, laneIdx, iconPath, width, height) {
-        const tex = textureLoader.load(iconPath);
+    // ---- Player visual ----
+    function makeBillboard(path, w, h, colorFallback) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: colorFallback || 0xffffff,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: true
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+      loader.load(path, function (tex) {
         tex.magFilter = THREE.NearestFilter;
         tex.minFilter = THREE.NearestFilter;
-        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat);
-        const z = lanes[laneIdx].z;
-        mesh.position.set(x, y + height / 2, z);
-        scene.add(mesh);
+        mat.map = tex;
+        mat.color.setHex(0xffffff);
+        mat.needsUpdate = true;
+      }, undefined, function () { /* keep solid color */ });
+      scene.add(mesh);
+      return { mesh: mesh, material: mat, width: w, height: h };
+    }
 
-        const prop = { mesh: mesh, type: type, x: x, y: y, lane: laneIdx, open: false };
-        interactables.push(prop);
-        return prop;
+    const player = makeBillboard('assets/player/SOUTH.png', 36, 48, 0x44ff88);
+    const playerAlt = {
+      faceCamera: function (cam) {
+        player.mesh.lookAt(cam.position.x, player.mesh.position.y, cam.position.z);
       }
+    };
 
-      createProp('CHESTBG', -50, 0, 0, 'assets/storage/bigchestclosed.png', 32, 28);
-      createProp('JAR', 50, 0, 0, 'assets/storage/JAR.png', 24, 24);
-
-      const collisionSystem = CollisionSystemV3.create();
-
-      const keys = {
-        left: false, right: false, up: false, down: false,
-        jump: false, attack: false, attackAlt1: false, attackAlt2: false,
-        interact: false, switchDepth: false
+    // ---- Enemies (per-lane) ----
+    const enemies = [];
+    function addEnemy(x, y, lane, hp, path, kind) {
+      const spr = makeBillboard(path, 30, 30, 0x66ffaa);
+      const e = {
+        x: x, y: y, lane: lane, hp: hp, maxHp: hp, dead: false,
+        mesh: spr.mesh, material: spr.material, kind: kind || 'slime',
+        patrolMin: x - 40, patrolMax: x + 40, dir: 1, speed: 28,
+        // Zelda2CombatV3 calls onHit(form) → true means remove
+        onHit: function (form) {
+          const dmg = (window._shadowDmg || 1);
+          e.hp -= dmg;
+          if (e.mesh && e.mesh.material) {
+            e.mesh.material.opacity = 0.4;
+            setTimeout(function () {
+              if (e.mesh && e.mesh.material && !e.dead) e.mesh.material.opacity = (e.lane === physics.lane) ? 1 : 0.35;
+            }, 80);
+          }
+          if (e.hp <= 0) {
+            e.dead = true;
+            return true;
+          }
+          return false;
+        }
       };
+      enemies.push(e);
+      return e;
+    }
 
-      // Interact Handler
-      function tryInteract() {
-        let best = null, bestD = 45;
-        for (let i = 0; i < interactables.length; i++) {
-          const it = interactables[i];
-          if (!it.mesh || !it.mesh.visible || it.open || it.lane !== physics.lane) continue;
-          const d = Math.abs(physics.x - it.x);
-          if (d < bestD) { bestD = d; best = it; }
-        }
+    // Front lane threats
+    addEnemy(150, 0, 0, 2, 'assets/enemies/SLIME-1.png', 'slime');
+    addEnemy(320, 0, 0, 2, 'assets/enemies/SLIME-1.png', 'slime');
+    addEnemy(480, 130, 0, 3, 'assets/enemies/skull.png', 'skull');
+    addEnemy(900, 0, 0, 3, 'assets/enemies/soldier.png', 'soldier');
+    addEnemy(1180, 40, 0, 5, 'assets/enemies/elecghost.png', 'ghost');
+    // Mid
+    addEnemy(280, 20, 1, 2, 'assets/enemies/greenblob.png', 'blob');
+    addEnemy(500, 60, 1, 3, 'assets/enemies/skull.png', 'skull');
+    addEnemy(800, 40, 1, 2, 'assets/enemies/SLIME-1.png', 'slime');
+    // Back (harder / denser)
+    addEnemy(220, 40, 2, 3, 'assets/enemies/elecskull.png', 'elec');
+    addEnemy(500, 80, 2, 4, 'assets/enemies/hardsoldier.png', 'hard');
+    addEnemy(780, 20, 2, 3, 'assets/enemies/ghost.png', 'ghost');
 
-        if (!best) {
-          statusEl.textContent = 'Nothing to use nearby';
-          return;
-        }
+    // ---- Interactables ----
+    const interactables = [];
+    function addProp(type, x, y, lane, path, w, h) {
+      const spr = makeBillboard(path, w, h, type.indexOf('CHEST') >= 0 ? 0xccaa44 : 0xaa88ff);
+      spr.mesh.position.set(x, y + h * 0.5, LANE_Z[lane]);
+      interactables.push({
+        type: type, x: x, y: y, lane: lane, open: false,
+        mesh: spr.mesh, w: w, h: h
+      });
+    }
 
-        if (best.type === 'CHESTBG') {
-          best.open = true;
-          textureLoader.load('assets/chests/BIGCHESTOPEN.png', tex => {
-            tex.magFilter = THREE.NearestFilter;
-            tex.minFilter = THREE.NearestFilter;
-            best.mesh.material.map = tex;
-            best.mesh.material.needsUpdate = true;
-          });
-          inv.give('metalsword');
-          inv.equip('metalsword');
-          audio.sfx('assets/fanfare/itemfanfare.wav');
-          statusEl.textContent = 'Opened Big Chest! Unlocked Metal Sword!';
+    addProp('CHESTSM', 100, 0, 0, 'assets/storage/smallchestclosed.png', 26, 22);
+    addProp('CHESTSM', 360, 70, 0, 'assets/storage/smallchestclosed.png', 26, 22);
+    addProp('CHESTBG', 640, 200, 1, 'assets/storage/bigchestclosed.png', 34, 28); // secret mid high
+    addProp('JAR', 200, 0, 0, 'assets/obstacles/jar.png', 18, 22);
+    addProp('JAR', 450, 0, 0, 'assets/obstacles/jar.png', 18, 22);
+    addProp('JAR', 300, 20, 1, 'assets/obstacles/jar.png', 18, 22);
+    addProp('EXIT', 1240, 40, 0, 'assets/doors/bosslock.png', 28, 48);
+
+    // ---- Combat ----
+    let kills = 0;
+    const combat = Zelda2CombatV3.create(physics, {
+      maxHealth: 8,
+      onDamage: function (hp, max) { paintHearts(hp, max); },
+      onDeath: function () {
+        statusEl.textContent = 'Fallen in the Shadow Palace — Esc field / refresh';
+      },
+      onEnemyHit: function () {
+        if (audio) audio.sfx('assets/music/$84-Scratch.wav');
+      },
+      onKillEnemy: function (e) {
+        kills++;
+        if (e.mesh) e.mesh.visible = false;
+        e.dead = true;
+        if (audio) audio.sfx('assets/fanfare/secret.wav');
+        paintEquip();
+      }
+    });
+
+    // Sync weapon damage if inventory present
+    function weaponDmg() {
+      if (!inv || !InventorySystemV3.weaponDamage) return 1;
+      return InventorySystemV3.weaponDamage(inv.getEquipped()) || 1;
+    }
+    window._shadowDmg = weaponDmg();
+      if (combat.setWeaponDamage) combat.setWeaponDamage(weaponDmg());
+
+    function paintHearts(hp, max) {
+      let s = '';
+      for (let i = 0; i < max; i++) s += i < hp ? '♥' : '♡';
+      heartsEl.textContent = s;
+    }
+    function paintEquip() {
+      const id = inv && inv.getEquipped ? inv.getEquipped() : 'woodsword';
+      const name = (InventorySystemV3 && InventorySystemV3.CATALOG && InventorySystemV3.CATALOG[id])
+        ? InventorySystemV3.CATALOG[id].name : id;
+      const keysN = inv && inv.count ? inv.count('smallkey') : 0;
+      equipEl.textContent = 'Weapon: ' + name + ' · Keys: ' + keysN +
+        ' · Kills: ' + kills + ' · Lane: ' + LANE_NAME[physics.lane];
+      window._shadowDmg = weaponDmg();
+      if (combat.setWeaponDamage) combat.setWeaponDamage(weaponDmg());
+    }
+    paintHearts(combat.getHealth(), combat.getMaxHealth());
+    paintEquip();
+
+    // Room name by X
+    function updateRoomTag() {
+      const x = physics.x;
+      let name = 'Entrance Hall';
+      if (x > 250 && x < 550) name = 'Pillar Ascent';
+      else if (x >= 550 && x < 720) name = gateOpen ? 'Gate Passage' : 'Sealed Gate';
+      else if (x >= 720 && x < 1050) name = 'Eastern Vault';
+      else if (x >= 1050) name = 'Boss Antechamber';
+      if (physics.lane === 2) name += ' [Shadow Walk]';
+      else if (physics.lane === 1) name += ' [Mid Depth]';
+      roomTag.textContent = name;
+    }
+
+    // ---- Input ----
+    const keys = {
+      left: false, right: false, up: false, down: false,
+      jump: false, attack: false, interact: false
+    };
+    window.addEventListener('keydown', function (e) {
+      startMusic();
+      const c = e.code;
+      if (c === 'KeyA' || c === 'ArrowLeft') keys.left = true;
+      if (c === 'KeyD' || c === 'ArrowRight') keys.right = true;
+      if (c === 'KeyW') keys.up = true;
+      if (c === 'KeyS') keys.down = true;
+      if (c === 'Space') { keys.jump = true; e.preventDefault(); }
+      if (c === 'KeyJ' || c === 'KeyB' || c === 'KeyK') keys.attack = true;
+      if (c === 'KeyF' || c === 'KeyE') {
+        keys.interact = true;
+        tryInteract();
+      }
+      if (e.key === '1' && inv) { inv.equip('woodsword'); paintEquip(); }
+      if (e.key === '2' && inv) { inv.give('metalsword'); inv.equip('metalsword'); paintEquip(); }
+      if (e.key === '3' && inv) { inv.give('plasmasword'); inv.equip('plasmasword'); paintEquip(); }
+      if (c === 'Escape') {
+        if (audio) audio.stopMusic();
+        location.href = 'index.html';
+      }
+    });
+    window.addEventListener('keyup', function (e) {
+      const c = e.code;
+      if (c === 'KeyA' || c === 'ArrowLeft') keys.left = false;
+      if (c === 'KeyD' || c === 'ArrowRight') keys.right = false;
+      if (c === 'KeyW') keys.up = false;
+      if (c === 'KeyS') keys.down = false;
+      if (c === 'Space') keys.jump = false;
+      if (c === 'KeyJ' || c === 'KeyB' || c === 'KeyK') keys.attack = false;
+      if (c === 'KeyF' || c === 'KeyE') keys.interact = false;
+    });
+
+    function tryInteract() {
+      // Gate unlock on FRONT near 710
+      if (physics.lane === 0 && Math.abs(physics.x - 710) < 40 && !gateOpen) {
+        const has = inv && inv.has && inv.has('smallkey');
+        if (has) {
+          inv.take('smallkey', 1);
+          gateOpen = true;
+          gateMesh.visible = false;
+          // Open path: extend platform continuity already there; remove soft block
+          statusEl.textContent = 'Shadow Gate unlocked!';
+          if (audio) audio.sfx('assets/fanfare/secret.wav');
           paintEquip();
-        } else if (best.type === 'JAR') {
-          best.open = true;
-          best.mesh.visible = false;
-          combat.heal(2);
-          audio.sfx('assets/fanfare/itemfanfare.wav');
-          statusEl.textContent = 'Smashed Jar! Recovered Hearts!';
+        } else {
+          statusEl.textContent = 'Gate sealed — need a Small Key';
+          if (audio) audio.sfx('assets/music/$84-Scratch.wav');
         }
+        return;
       }
 
-      window.addEventListener('keydown', e => {
-        const k = e.key.toLowerCase();
-        if (e.code === 'KeyA') keys.left = true;
-        if (e.code === 'KeyD') keys.right = true;
-        if (e.code === 'KeyW') keys.up = true;
-        if (e.code === 'KeyS') keys.down = true;
-        if (e.code === 'Space') keys.jump = true;
-        if (e.code === 'KeyJ') keys.attack = true;
-        if (e.code === 'KeyB') keys.attackAlt1 = true;
-        if (e.code === 'KeyK') keys.attackAlt2 = true;
-        if (e.code === 'KeyE') keys.interact = true;
-        if (e.code === 'KeyF') keys.switchDepth = true;
+      // Props on same lane
+      let best = null, bestD = 42;
+      for (let i = 0; i < interactables.length; i++) {
+        const it = interactables[i];
+        if (it.lane !== physics.lane || it.open) continue;
+        const d = Math.hypot(physics.x - it.x, physics.y - it.y);
+        if (d < bestD) { bestD = d; best = it; }
+      }
+      if (!best) {
+        // Lane door handled by physics on interact
+        statusEl.textContent = 'Depth portal / nothing else nearby';
+        return;
+      }
 
-        if (k === '1') { inv.equip('woodsword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
-        if (k === '2') { inv.give('metalsword'); inv.equip('metalsword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
-        if (k === '3') { inv.give('plasmasword'); inv.equip('plasmasword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
+      if (best.type === 'CHESTSM') {
+        best.open = true;
+        if (inv) inv.give('smallkey');
+        best.mesh.material.color.setHex(0x666666);
+        statusEl.textContent = 'Small Key!';
+        if (audio) audio.sfx('assets/fanfare/smchestepen.wav');
+        paintEquip();
+      } else if (best.type === 'CHESTBG') {
+        best.open = true;
+        if (inv) { inv.give('metalsword'); inv.equip('metalsword'); }
+        best.mesh.material.color.setHex(0x666666);
+        statusEl.textContent = 'Metal Sword from the Shadow Cache!';
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+        paintEquip();
+      } else if (best.type === 'JAR') {
+        best.open = true;
+        best.mesh.visible = false;
+        if (Math.random() < 0.4 && combat.heal) {
+          combat.heal(1);
+          paintHearts(combat.getHealth(), combat.getMaxHealth());
+          statusEl.textContent = 'Heart!';
+        } else statusEl.textContent = 'Jar shattered';
+      } else if (best.type === 'EXIT') {
+        if (audio) audio.stopMusic();
+        location.href = 'd_1boss.html'; // placeholder boss link
+      }
+    }
 
-        if (k === 'f' || k === 'e') tryInteract();
-
-        if (e.code === 'Escape') {
-          try {
-            if (typeof PlayerStateV3 !== 'undefined') PlayerStateV3.load().setRoom('index.html').save();
-          } catch (err) {}
-          audio.stopMusic();
-          location.href = 'index.html';
+    // Soft gate block: push player left if closed and past gate
+    function enforceGate() {
+      if (gateOpen || physics.lane !== 0) return;
+      if (physics.x > 700 && physics.x < 730 && physics.y < 200) {
+        // allow if high above? Gate is at y 130 bridge
+        if (physics.y >= 100) {
+          physics.x = 698;
         }
+      }
+    }
+
+    // Enemy patrol (same lane only movement)
+    function updateEnemies(dt) {
+      enemies.forEach(function (e) {
+        if (e.dead) return;
+        e.x += e.dir * e.speed * dt;
+        if (e.x > e.patrolMax) e.dir = -1;
+        if (e.x < e.patrolMin) e.dir = 1;
+        e.mesh.position.set(e.x, e.y + 16, LANE_Z[e.lane]);
+        e.mesh.lookAt(camera.position.x, e.mesh.position.y, camera.position.z);
+        // Dim if not current lane
+        e.mesh.material.opacity = (e.lane === physics.lane) ? 1 : 0.35;
+      });
+    }
+
+    // Respawn if fell
+    const spawn = { x: 20, y: 40, lane: 0 };
+    function checkPit() {
+      if (physics.y < -200) {
+        if (combat.applyDamage) {
+          // optional
+        }
+        // soft reset position via recreate is hard; nudge
+        // SidescrollPhysics may not expose setters — try assignment if writable
+        if (typeof physics.setPosition === 'function') {
+          physics.setPosition(spawn.x, spawn.y, spawn.lane);
+        }
+        if (combat.getHealth && combat.getHealth() > 0) {
+          // fall damage without death stack
+        }
+        statusEl.textContent = 'Fell into the void — returned to entrance';
+      }
+    }
+
+    statusEl.textContent = 'Shadow Palace ready · F at purple portals to change depth';
+
+    let lastT = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastT) / 1000);
+      lastT = now;
+
+      physics.update(dt, keys, lanes, laneDoors);
+      enforceGate();
+      combat.update(dt, keys, enemies);
+      updateEnemies(dt);
+      checkPit();
+
+      const z = LANE_Z[physics.lane];
+      player.mesh.position.set(physics.x, physics.y + 24, z);
+      playerAlt.faceCamera(camera);
+      player.mesh.material.opacity = combat.isAttacking && combat.isAttacking() ? 0.85 : 1;
+
+      interactables.forEach(function (it) {
+        if (!it.mesh.visible) return;
+        it.mesh.lookAt(camera.position.x, it.mesh.position.y, camera.position.z);
+        it.mesh.material.opacity = (it.lane === physics.lane) ? 1 : 0.3;
       });
 
-      window.addEventListener('keyup', e => {
-        if (e.code === 'KeyA') keys.left = false;
-        if (e.code === 'KeyD') keys.right = false;
-        if (e.code === 'KeyW') keys.up = false;
-        if (e.code === 'KeyS') keys.down = false;
-        if (e.code === 'Space') keys.jump = false;
-        if (e.code === 'KeyJ') keys.attack = false;
-        if (e.code === 'KeyB') keys.attackAlt1 = false;
-        if (e.code === 'KeyK') keys.attackAlt2 = false;
-        if (e.code === 'KeyE') keys.interact = false;
-        if (e.code === 'KeyF') keys.switchDepth = false;
-      });
+      torch.position.set(physics.x, physics.y + 36, z + 20);
+
+      // Camera: side-view bias, eases Z toward lane
+      const camZTarget = 220 + physics.lane * 15;
+      camera.position.x += (physics.x - camera.position.x) * Math.min(1, dt * 4);
+      camera.position.y += ((physics.y + 55) - camera.position.y) * Math.min(1, dt * 4);
+      camera.position.z += (camZTarget - camera.position.z) * Math.min(1, dt * 3);
+      camera.lookAt(physics.x, physics.y + 28, z);
 
       paintEquip();
-      let lastT = performance.now();
+      updateRoomTag();
+      statusEl.textContent =
+        'X:' + physics.x.toFixed(0) +
+        ' Y:' + physics.y.toFixed(0) +
+        ' Lane:' + LANE_NAME[physics.lane] +
+        ' G:' + physics.grounded +
+        ' HP:' + combat.getHealth() + '/' + combat.getMaxHealth();
 
-      function animate() {
-        requestAnimationFrame(animate);
-        const now = performance.now();
-        const dt = Math.min(0.05, (now - lastT) / 1000);
-        lastT = now;
+      renderer.render(scene, camera);
+    }
+    animate();
 
-        physics.update(dt, keys);
-        combat.update(dt, keys, enemies);
-        collisionSystem.resolveEntityOverlaps(playerSprite, enemies);
-
-        const currentZ = physics.lane === 0 ? LANE_FRONT_Z : LANE_BACK_Z;
-        playerSprite.mesh.position.set(physics.x, physics.y + 18, currentZ);
-        playerSprite.faceCamera(camera);
-
-        if (!enemies[0].dead) {
-          slimeSprite.mesh.position.set(enemies[0].x, enemies[0].y + 16, LANE_FRONT_Z);
-          slimeSprite.faceCamera(camera);
-        }
-
-        interactables.forEach(it => {
-          if (it.mesh && it.mesh.visible) it.mesh.lookAt(camera.position.x, it.mesh.position.y, camera.position.z);
-        });
-
-        torchLight.position.set(physics.x, physics.y + 30, currentZ + 20);
-        hpBars.update(camera);
-
-        const targetCamZ = physics.lane === 0 ? 250 : 200;
-        camera.position.x += (physics.x - camera.position.x) * Math.min(dt * 4, 1);
-        camera.position.y += ((physics.y + 50) - camera.position.y) * Math.min(dt * 4, 1);
-        camera.position.z += (targetCamZ - camera.position.z) * Math.min(dt * 3, 1);
-        camera.lookAt(physics.x, physics.y + 25, physics.lane === 0 ? 30 : -30);
-
-        statusEl.textContent = `X:${physics.x.toFixed(0)} Y:${physics.y.toFixed(0)} Lane:${physics.lane} Grounded:${physics.grounded} HP:${combat.getHealth()}/8`;
-
-        renderer.render(scene, camera);
-      }
-
-      animate();
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    })();
+    window.addEventListener('resize', function () {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  })();
   </script>
 </body>
 </html>

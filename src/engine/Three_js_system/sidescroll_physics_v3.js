@@ -113,6 +113,13 @@
              * doesn't force a fake little "fall" frame. Just nudges x and
              * gives it a decaying vx kick.
              */
+            setPosition: function (x, y, lane) {
+                if (x != null) state.x = x;
+                if (y != null) state.y = y;
+                if (lane != null) state.lane = lane;
+                state.vx = 0;
+                state.vy = 0;
+            },
             applyKnockback: function (dx, vxKick) {
                 state.x += dx;
                 state.vx = vxKick != null ? vxKick : (dx > 0 ? 120 : -120);
