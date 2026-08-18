@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidescroll Dungeon Engine Test (2.5D)</title>
+    <style>
+        @font-face {
+            font-family: 'RetroCGA';
+            src: url('assets/fonts/Px437_IBM_CGA.ttf') format('truetype');
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { overflow: hidden; background: #000; color: #00ff66; font-family: 'RetroCGA', monospace; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #hud {
+            position: absolute; top: 24px; left: 24px; z-index: 20;
+            background: rgba(0, 5, 2, 0.88); padding: 10px 14px;
+            border: 2px solid #00ff66; max-width: 480px;
+        }
+        #hud .title { font-size: 13px; letter-spacing: 0.08em; }
+        #hud .sub { font-size: 11px; color: #88ffaa; margin-top: 4px; line-height: 1.5; }
+        #hud .note { font-size: 10px; color: #ffcc66; margin-top: 8px; border-top: 1px solid #00ff6633; padding-top: 6px; }
+        #hearts { position: absolute; top: 24px; right: 24px; z-index: 20; display: flex; gap: 5px; }
+        .heart { width: 16px; height: 16px; border: 2px solid #ff4466; background: #ff4466; }
+        .heart.empty { background: transparent; border-color: #552233; }
+        #status {
+            position: absolute; bottom: 18px; left: 24px; z-index: 20;
+            font-size: 11px; color: #66cc88; background: rgba(0,0,0,0.7);
+            padding: 6px 10px; border: 1px solid #00ff6644;
+        }
+        #door-hint {
+            display: none;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -140px);
+            z-index: 30; color: #ffff66; text-shadow: 0 0 8px #ffff66;
+            background: rgba(0,0,0,0.7); padding: 6px 14px; border: 1px solid #ffff6688;
+            font-size: 12px;
+        }
+        #game-over {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 60; color: #ff3333; text-shadow: 0 0 12px #ff3333; font-size: 22px; text-align: center;
+        }
+        #game-over .hint { margin-top: 10px; font-size: 12px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="hud">
+        <div class="title">2.5D SIDE-SCROLL ENGINE TEST</div>
+        <div class="sub">
+            A/D MOVE &middot; SPACE JUMP &middot; S CROUCH &middot; K ATTACK (form auto-picked from state) &middot; F SHIFT LANE AT DOOR
+        </div>
+        <div class="note">
+            Placeholder geometry only -- no real side-view dungeon art or
+            action-pose sprites exist yet for this style. This scene
+            validates the physics/combat/depth-layer mechanics, meant to
+            sit alongside D1's top-down palace as a different dungeon's
+            engine, mixed-ROM-hack style -- not to look final on its own.
+        </div>
+    </div>
+    <div id="hearts"></div>
+    <div id="door-hint">[ F — SHIFT TO BACK LANE ]</div>
+    <div id="status">Loading...</div>
+    <div id="game-over"><div>YOU DIED</div><div class="hint">PRESS R TO RESPAWN</div></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="src/engine/Three_js_system/sidescroll_physics_v3.js"></script>
+    <script src="src/engine/Three_js_system/zelda2_combat_v3.js"></script>
+    <script src="src/engine/Three_js_system/depth_stack_v3.js"></script>
+
+    <script>
+    (function () {
+        const statusEl = document.getElementById('status');
+        const heartsEl = document.getElementById('hearts');
+        const doorHintEl = document.getElementById('door-hint');
+        const gameOverEl = document.getElementById('game-over');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05050a);
+        scene.fog = new THREE.FogExp2(0x05050a, 0.0009);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 3000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const loader = new THREE.TextureLoader();
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const key = new THREE.DirectionalLight(0xffffff, 0.5);
+        key.position.set(100, 200, 200);
+        scene.add(key);
+
+        // ---- Depth-layered backdrop (parallax test, color layers since
+        // no real dungeon art exists yet for this style -- see
+        // depth_stack_v3.js) ----
+        DepthStackV3.buildColorLayers(scene, [
+            { z: -420, color: 0x0a0a14, width: 1200, height: 500, y: 100 },
+            { z: -300, color: 0x121220, width: 1000, height: 460, y: 90 },
+            { z: -180, color: 0x1a1a2c, width: 850, height: 420, y: 80 },
+            { z:  -70, color: 0x22223a, width: 750, height: 380, y: 70 }
+        ]);
+
+        // ---- Two lanes ----
+        // Lane 0 (front, z=40): ground with a pit gap + a raised ledge.
+        // Lane 1 (back, z=-40): a single raised platform, reached only
+        // via the lane door -- proves the "doors at different depths"
+        // part of the 2.5D hybrid brief, not just flat side-scrolling.
+        const lanes = [
+            {
+                z: 40,
+                pitY: -300,
+                platforms: [
+                    { x0: -400, x1: -40, y: 0 },
+                    { x0: 40, x1: 260, y: 0 },
+                    { x0: 60, x1: 180, y: 45 },
+                    { x0: 260, x1: 420, y: 0 }
+                ],
+                walls: []
+            },
+            {
+                z: -40,
+                pitY: -300,
+                platforms: [
+                    { x0: -60, x1: 60, y: 40 }
+                ],
+                walls: []
+            }
+        ];
+
+        // Door connects lane 0 <-> lane 1 at x=120 (sits above the pit,
+        // roughly under the raised ledge -- deliberately makes the player
+        // choose: jump the pit on lane 0, or duck into the back lane).
+        const laneDoors = [
+            { x: 120, fromLane: 0, toLane: 1, landX: 0, landY: 40 },
+            { x: 0, fromLane: 1, toLane: 0, landX: 120, landY: 45 }
+        ];
+
+        function drawPlatforms(lane, color) {
+            lane.platforms.forEach(function (p) {
+                const w = p.x1 - p.x0;
+                const mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(w, 14, 34),
+                    new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 })
+                );
+                mesh.position.set(p.x0 + w / 2, p.y - 7, lane.z);
+                scene.add(mesh);
+            });
+        }
+        drawPlatforms(lanes[0], 0x3a4a3a);
+        drawPlatforms(lanes[1], 0x3a3a4a);
+
+        const doorMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffff66, transparent: true, opacity: 0.5 });
+        const doorMarker = new THREE.Mesh(new THREE.BoxGeometry(24, 90, 24), doorMarkerMat);
+        doorMarker.position.set(120, 45, 40);
+        scene.add(doorMarker);
+
+        // ---- Player (placeholder box, tints by state) ----
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x00ff66 });
+        const playerMesh = new THREE.Mesh(new THREE.BoxGeometry(16, 32, 16), playerMat);
+        scene.add(playerMesh);
+
+        const physics = SidescrollPhysicsV3.create({
+            startLane: 0, startX: -350, startY: 0,
+            onFallDeath: function () { flashDeath('Fell into the pit'); },
+            onLaneShift: function (from, to) { statusEl.textContent = 'Shifted lane ' + from + ' -> ' + to; }
+        });
+
+        const combat = Zelda2CombatV3.create(physics, {
+            maxHealth: 6,
+            onDamage: renderHearts,
+            onDeath: function () { flashDeath('Defeated'); },
+            onKillEnemy: function (e) { e.mesh.visible = false; }
+        });
+
+        function renderHearts() {
+            heartsEl.innerHTML = '';
+            const hp = combat.getHealth(), max = combat.getMaxHealth();
+            for (let i = 0; i < max; i++) {
+                const d = document.createElement('div');
+                d.className = 'heart' + (i >= hp ? ' empty' : '');
+                heartsEl.appendChild(d);
+            }
+        }
+        renderHearts();
+
+        function flashDeath(reason) {
+            statusEl.textContent = 'Dead: ' + reason;
+            gameOverEl.style.display = 'block';
+        }
+        window.addEventListener('keydown', function (e) {
+            if ((combat.isDead() || physics.isDead()) && e.key.toLowerCase() === 'r') window.location.reload();
+        });
+
+        // ---- One placeholder enemy -- patrols lane 0, damageable, contact-damages player ----
+        const enemyMat = new THREE.MeshStandardMaterial({ color: 0xff4466 });
+        const enemyMesh = new THREE.Mesh(new THREE.BoxGeometry(16, 24, 16), enemyMat);
+        scene.add(enemyMesh);
+        const enemy = {
+            mesh: enemyMesh,
+            x: 300, y: 0, lane: 0, radius: 14, dead: false,
+            _dir: -1, _hp: 3,
+            onHit: function (form) {
+                this._hp -= 1;
+                enemyMat.color.setHex(0xffffff);
+                setTimeout(function () { enemyMat.color.setHex(0xff4466); }, 80);
+                return this._hp <= 0;
+            }
+        };
+        const enemies = [enemy];
+
+        // ---- Controls ----
+        const keys = { left: false, right: false, up: false, down: false, jump: false, interact: false, attack: false };
+        window.addEventListener('keydown', function (e) {
+            const k = e.key.toLowerCase();
+            if (k === 'a') keys.left = true;
+            if (k === 'd') keys.right = true;
+            if (k === 's') keys.down = true;
+            if (k === 'w') keys.up = true;
+            if (k === ' ' || e.code === 'Space') keys.jump = true;
+            if (k === 'f') keys.interact = true;
+            if (k === 'k') keys.attack = true;
+        });
+        window.addEventListener('keyup', function (e) {
+            const k = e.key.toLowerCase();
+            if (k === 'a') keys.left = false;
+            if (k === 'd') keys.right = false;
+            if (k === 's') keys.down = false;
+            if (k === 'w') keys.up = false;
+            if (k === ' ' || e.code === 'Space') keys.jump = false;
+            if (k === 'f') keys.interact = false;
+            if (k === 'k') keys.attack = false;
+        });
+
+        let lastFrame = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const dt = Math.min((now - lastFrame) / 1000, 0.05);
+            lastFrame = now;
+
+            if (!physics.isDead() && !combat.isDead()) {
+                physics.update(dt, keys, lanes, laneDoors);
+
+                if (!enemy.dead) {
+                    enemy.x += enemy._dir * 40 * dt;
+                    if (enemy.x < 220 || enemy.x > 380) enemy._dir *= -1;
+                }
+
+                combat.update(dt, keys, enemies);
+
+                doorHintEl.style.display = physics.nearDoor ? 'block' : 'none';
+                if (physics.nearDoor) {
+                    doorHintEl.textContent = '[ F — SHIFT TO LANE ' + physics.nearDoor.toLane + ' ]';
+                }
+            }
+
+            playerMesh.position.set(physics.x, physics.y + (physics.crouching ? 10 : 16), physics.lane === 0 ? 40 : -40);
+            playerMesh.scale.y = physics.crouching ? 0.6 : 1;
+            playerMat.color.setHex(combat.isAttacking() ? 0xffff00 : 0x00ff66);
+
+            enemyMesh.position.set(enemy.x, enemy.y + 12, enemy.lane === 0 ? 40 : -40);
+            enemyMesh.visible = !enemy.dead;
+
+            doorMarker.material.opacity = 0.35 + 0.15 * Math.sin(now * 0.004);
+
+            // Camera: side-on follow, small Z/height nudge toward the
+            // player's current lane so the depth-layer parallax actually
+            // reads as the player moves between lanes.
+            const laneZTarget = physics.lane === 0 ? 260 : 220;
+            camera.position.x += (physics.x - camera.position.x) * Math.min(dt * 4, 1);
+            camera.position.y += ((physics.y + 60) - camera.position.y) * Math.min(dt * 4, 1);
+            camera.position.z += (laneZTarget - camera.position.z) * Math.min(dt * 3, 1);
+            camera.lookAt(physics.x, physics.y + 30, physics.lane === 0 ? 40 : -40);
+
+            statusEl.textContent =
+                'X:' + physics.x.toFixed(0) + ' Y:' + physics.y.toFixed(0) +
+                ' Lane:' + physics.lane +
+                ' Grounded:' + physics.grounded +
+                ' Form:' + (combat.getAttackForm() || '-') +
+                ' HP:' + combat.getHealth() + '/' + combat.getMaxHealth();
+
+            renderer.render(scene, camera);
+        }
+        camera.position.set(-350, 60, 260);
+        animate();
+
+        window.addEventListener('resize', function () {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    })();
+    </script>
+</body>
+</html>
