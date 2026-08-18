@@ -1,192 +1,946 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neondromeda - DUNGEON 4 // SANDSTONE CATACOMBS</title>
-    <link rel="stylesheet" href="ui_styles.css">
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #030200;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        #webgl-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        #sector-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #ffaa00;
-            text-shadow: 0 0 8px #ff6600;
-            pointer-events: none;
-            z-index: 100;
-        }
-        #sector-overlay h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-        }
-        #nav-hud {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-        #nav-hud a {
-            color: #ffaa00;
-            text-decoration: none;
-            background: rgba(0,0,0,0.85);
-            padding: 8px 16px;
-            border: 1px solid #ffaa00;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        #nav-hud a:hover {
-            background: #ffaa00;
-            color: #000;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legacy of Chroma - Shadow Palace Dungeon 4 (2.5D Engine)</title>
+  <style>
+    @font-face {
+      font-family: 'RetroCGA';
+      src: url('assets/fonts/Px437_IBM_CGA.ttf') format('truetype');
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { overflow: hidden; background: #000; color: #00ff66; font-family: 'RetroCGA', monospace; }
+    #canvas-container { width: 100vw; height: 100vh; }
+    
+    /* RETRO HUD OVERLAY */
+    #hud {
+      position: absolute; top: 18px; left: 18px; z-index: 20;
+      background: rgba(0, 8, 3, 0.9); padding: 12px 16px;
+      border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3);
+      max-width: 580px;
+    }
+    #hud .title { font-size: 14px; letter-spacing: 0.1em; color: #00ff66; font-weight: bold; }
+    #hud .sub { font-size: 11px; color: #66ff99; margin-top: 4px; line-height: 1.4; }
+    #hearts { margin-top: 6px; letter-spacing: 3px; color: #ff4444; font-size: 14px; }
+    #equip { margin-top: 4px; font-size: 11px; color: #00ff66; }
+    #status {
+      position: absolute; bottom: 12px; left: 18px; z-index: 20;
+      font-size: 11px; color: #00cc55; background: rgba(0,0,0,0.8);
+      padding: 4px 8px; border: 1px solid #005522;
+    }
+    
+    /* CRT SCANLINE OVERLAY */
+    .scanlines {
+      pointer-events: none; position: fixed; inset: 0; z-index: 99;
+      background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0, 255, 102, 0.03) 3px);
+    }
+  </style>
 
-    <!-- Three.js Dependency -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <!-- Engine System Dependencies -->
-    <script src="src/engine/Three_js_system/chroma_engine.js"></script>
-    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
-    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
-    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+  <!-- Three.js Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="sector-overlay">
-        <h1>DUNGEON 4 // SANDSTONE CATACOMBS</h1>
-        <p>LOCATION: DESERT SUB-LEVEL</p>
+  <div class="scanlines"></div>
+
+  <div id="hud">
+    <div class="title">DUNGEON 4: TEMPLE BLUE (2.5D)</div>
+    <div class="sub">
+      [A/D] Move &bull; [W/S] Aim High/Low &bull; [SPACE] Jump &bull; [J / B / K] Thrust Attack<br>
+      [F / E] Interact / Chest / Door / Lane &bull; [1-3] Equip Sword &bull; [ESC] Field
     </div>
+    <div id="hearts">&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;&hearts;</div>
+    <div id="equip">EQUIPPED: Wood Sword (1 dmg) &bull; Keys: 0 &bull; Kills: 0</div>
+  </div>
 
-    <div id="nav-hud">
-        <a href="desert_sector.html">← DESERT SECTOR [ESC]</a>
-    </div>
+  <div id="status">X:0 Y:0 Lane:0 Grounded:true HP:8/8</div>
+  <div id="canvas-container"></div>
 
-    <canvas id="webgl-canvas"></canvas>
+  <!-- ENGINE MODULES INJECTION -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. AudioSystemV3
+    // -------------------------------------------------------------------------
+    window.AudioSystemV3 = (function () {
+      function create(options) {
+        options = options || {};
+        let music = null;
+        let currentTrack = '';
+        const sfxCache = Object.create(null);
+        const musicVol = options.musicVolume != null ? options.musicVolume : 0.4;
+        const sfxVol = options.sfxVolume != null ? options.sfxVolume : 0.5;
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('webgl-canvas');
+        return {
+          playMusic: function (url, opts) {
+            opts = opts || {};
+            if (!url || (currentTrack === url && music && !music.paused)) return;
+            this.stopMusic();
+            try {
+              music = new Audio(url);
+              music.loop = opts.loop !== false;
+              music.volume = opts.volume != null ? opts.volume : musicVol;
+              currentTrack = url;
+              const p = music.play();
+              if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+          },
+          stopMusic: function () {
+            if (music) { try { music.pause(); music.src = ''; } catch (e) {} }
+            music = null; currentTrack = '';
+          },
+          sfx: function (url, opts) {
+            opts = opts || {};
+            if (!url) return;
+            try {
+              let a = sfxCache[url];
+              if (!a || opts.noCache) {
+                a = new Audio(url);
+                if (!opts.noCache) sfxCache[url] = a;
+              }
+              a.volume = opts.volume != null ? opts.volume : sfxVol;
+              a.currentTime = 0;
+              const p = a.play();
+              if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+          }
+        };
+      }
+      return { create: create };
+    })();
 
-            // 1. Core Engine Initialization (Indoor Torchlit Ambient)
-            const engine = new ChromaEngine({
-                canvas: canvas,
-                clearColor: 0x0a0500,
-                fogColor: 0x1c0f00,
-                fogDensity: 0.025
-            });
+    // -------------------------------------------------------------------------
+    // 2. InventorySystemV3
+    // -------------------------------------------------------------------------
+    window.InventorySystemV3 = (function () {
+      const CATALOG = {
+        woodsword:   { name: 'Wood Sword', slot: 'weapon', damage: 1, icon: 'assets/inventory/WOODSWORD-1.png' },
+        metalsword:  { name: 'Metal Sword', slot: 'weapon', damage: 2, icon: 'assets/inventory/METALSWORD.png' },
+        plasmasword: { name: 'Plasma Sword', slot: 'weapon', damage: 3, icon: 'assets/inventory/PLASMASWORD.png' },
+        lantern:     { name: 'Lantern', slot: 'tool', icon: 'assets/inventory/LANTERN-1.png' },
+        smallkey:    { name: 'Small Key', slot: 'key', icon: 'assets/inventory/SMALL KEY.png' }
+      };
 
-            // 2. Camera Controls
-            const cameraController = new CameraControlsV3(engine.camera, engine.renderer.domElement, {
-                moveSpeed: 8.0,
-                lookSpeed: 0.002,
-                heightOffset: 1.8
-            });
+      function weaponDamage(id) {
+        return (CATALOG[id] && CATALOG[id].damage) ? CATALOG[id].damage : 1;
+      }
 
-            // 3. Torchlight Ambient Lighting Setup
-            const ambientLight = new THREE.AmbientLight(0xffaa44, 0.25);
-            engine.scene.add(ambientLight);
+      function create(options) {
+        options = options || {};
+        const items = Object.create(null);
+        let equipped = 'woodsword';
 
-            const torchLight = new THREE.PointLight(0xff7700, 1.5, 30);
-            torchLight.position.set(0, 4, 0);
-            engine.scene.add(torchLight);
+        const api = {
+          give: function (id, count) {
+            count = count || 1;
+            items[id] = (items[id] || 0) + count;
+          },
+          take: function (id, count) {
+            count = count || 1;
+            if (items[id]) items[id] = Math.max(0, items[id] - count);
+          },
+          has: function (id) { return (items[id] || 0) > 0; },
+          count: function (id) { return items[id] || 0; },
+          equip: function (id) {
+            if (CATALOG[id]) {
+              equipped = id;
+              if (options.onEquip) options.onEquip(id);
+            }
+          },
+          getEquipped: function () { return equipped; },
+          toJSON: function() { return { items: items, equipped: equipped }; },
+          fromJSON: function(data) {
+            if (!data) return;
+            if (data.items) Object.assign(items, data.items);
+            if (data.equipped) equipped = data.equipped;
+          }
+        };
 
-            // 4. Room & Dungeon Architecture (Using D4 Guide Map and Textures)
-            const textureLoader = new THREE.TextureLoader();
-            const wallTexture = textureLoader.load('assets/textures/stone3.jpg');
-            const floorTexture = textureLoader.load('assets/textures/sand3.jpg');
+        if (options.starter) {
+          options.starter.forEach(id => api.give(id));
+        }
+        return api;
+      }
 
-            wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-            wallTexture.repeat.set(4, 2);
+      return { create: create, CATALOG: CATALOG, weaponDamage: weaponDamage };
+    })();
 
-            floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(8, 8);
+    // -------------------------------------------------------------------------
+    // 3. PlayerStateV3
+    // -------------------------------------------------------------------------
+    (function (global) {
+      const STORAGE_KEY = 'neondromeda_player_v1';
+      const VERSION = 1;
 
-            const roomBuilder = new RoomBuilderV3(engine.scene);
-            roomBuilder.buildDungeonChamber({
-                width: 60,
-                depth: 60,
-                height: 8,
-                wallMaterial: new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.8 }),
-                floorMaterial: new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.9 })
-            });
+      function defaultState() {
+        return {
+          v: VERSION, hp: 8, maxHp: 8,
+          inventory: { items: {}, equipped: 'woodsword' },
+          flags: {}, keys: 0, rupees: 0, lastRoom: 'd_4.html', lastPos: null, updatedAt: Date.now()
+        };
+      }
 
-            // 5. Entities, Collision & Combat
-            const collisionSystem = new CollisionSystemV3();
-            const combatSystem    = new CombatSystemV3(engine.scene);
-            const spriteSystem    = new SpriteSystemV3(engine.scene);
-            const hpBarSystem     = new HpBarSystemV3(engine.scene);
+      function load() {
+        let data = defaultState();
+        try {
+          const raw = global.localStorage && localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') data = Object.assign(defaultState(), parsed);
+          }
+        } catch (e) {}
+        return apiFrom(data);
+      }
 
-            // Dungeon Chest
-            const chest = spriteSystem.createSprite('assets/chests/BIGCHEST-1.png', {
-                position: new THREE.Vector3(0, 1.2, -20),
-                scale: new THREE.Vector3(2.5, 2.5, 1)
-            });
-            collisionSystem.addStaticObstacle(0, -20, 1.5);
+      function apiFrom(data) {
+        return {
+          data: data,
+          save: function () {
+            data.updatedAt = Date.now();
+            try { if (global.localStorage) localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+            return this;
+          },
+          getHp: function () { return data.hp; },
+          getMaxHp: function () { return data.maxHp; },
+          setHp: function (hp, maxHp) {
+            if (maxHp != null) data.maxHp = maxHp;
+            data.hp = Math.max(0, Math.min(data.maxHp, hp));
+            return this;
+          }
+        };
+      }
 
-            // D4 Enemies (Hard Knights & Neon Skulls)
-            const d4Enemies = ['assets/enemies/KNIGHTHARDLEFT.png', 'assets/enemies/NEONSKULLHARD.png'];
-            for (let i = 0; i < 8; i++) {
-                const x = (Math.random() - 0.5) * 40;
-                const z = (Math.random() - 0.5) * 40;
+      global.PlayerStateV3 = { load: load, defaultState: defaultState };
+    })(window);
 
-                const enemySprite = d4Enemies[Math.floor(Math.random() * d4Enemies.length)];
-                const enemy = spriteSystem.createEnemySprite(enemySprite, {
-                    position: new THREE.Vector3(x, 1.5, z),
-                    hp: 60,
-                    scale: new THREE.Vector3(2.5, 2.5, 1)
-                });
-                hpBarSystem.attachHpBar(enemy, 60);
-                combatSystem.registerEntity(enemy);
+    // -------------------------------------------------------------------------
+    // 4. SidescrollPhysicsV3
+    // -------------------------------------------------------------------------
+    window.SidescrollPhysicsV3 = (function () {
+      const GRAVITY = -900;
+      const WALK_ACCEL = 1400;
+      const FRICTION = 0.82;
+      const JUMP_VELOCITY = 380;
+      const DOOR_RADIUS = 35;
+
+      function create(options) {
+        options = options || {};
+        const lanes = options.lanes || [];
+        const laneDoors = options.laneDoors || [];
+
+        const state = {
+          x: options.startX || 0, y: options.startY || 0,
+          vx: 0, vy: 0, lane: options.startLane || 0,
+          facingRight: true, crouching: false, grounded: false,
+          nearDoor: null, prevInteract: false, dead: false
+        };
+
+        return {
+          get x() { return state.x; },
+          get y() { return state.y; },
+          get vx() { return state.vx; },
+          get vy() { return state.vy; },
+          get lane() { return state.lane; },
+          get facingRight() { return state.facingRight; },
+          get facing() { return state.facingRight ? 'right' : 'left'; },
+          get crouching() { return state.crouching; },
+          get grounded() { return state.grounded; },
+          get nearDoor() { return state.nearDoor; },
+          get dead() { return state.dead; },
+
+          applyKnockback: function(kx, ky) {
+            state.vx += kx;
+            state.vy += ky;
+          },
+
+          update: function (dt, keys) {
+            if (state.dead) return;
+
+            const moveLeft = !!keys.left;
+            const moveRight = !!keys.right;
+            const crouchKey = !!keys.down;
+            const jumpKey = !!keys.jump;
+
+            state.crouching = state.grounded && crouchKey;
+
+            if (!state.crouching) {
+              if (moveLeft && !moveRight) {
+                state.vx -= WALK_ACCEL * dt;
+                state.facingRight = false;
+              } else if (moveRight && !moveLeft) {
+                state.vx += WALK_ACCEL * dt;
+                state.facingRight = true;
+              } else {
+                state.vx *= FRICTION;
+              }
+            } else {
+              state.vx *= FRICTION;
             }
 
-            // 6. Loop
-            const clock = new ClockSystemV3();
-            
-            function animate() {
-                requestAnimationFrame(animate);
-
-                const delta = clock.getDelta();
-                const time  = clock.getElapsedTime();
-
-                // Torch flicker effect
-                torchLight.intensity = 1.5 + Math.sin(time * 10) * 0.15;
-
-                cameraController.update(delta);
-                combatSystem.update(delta);
-                spriteSystem.update(engine.camera);
-                hpBarSystem.update(engine.camera);
-
-                engine.render();
+            if (jumpKey && state.grounded && !state.crouching) {
+              state.vy = JUMP_VELOCITY;
+              state.grounded = false;
             }
 
-            animate();
+            state.vy += GRAVITY * dt;
+            state.x += state.vx * dt;
+            state.y += state.vy * dt;
 
-            // Return to Desert
-            window.addEventListener('keydown', e => {
-                if (e.code === 'Escape') location.href = 'desert_sector.html';
-            });
+            const lane = lanes[state.lane];
+            state.grounded = false;
+
+            if (lane && lane.platforms) {
+              for (let i = 0; i < lane.platforms.length; i++) {
+                const p = lane.platforms[i];
+                if (state.x >= p.x0 && state.x <= p.x1) {
+                  if (state.vy <= 0 && state.y <= p.y && (state.y - state.vy * dt) >= p.y - 12) {
+                    state.y = p.y;
+                    state.vy = 0;
+                    state.grounded = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (lane && lane.pitY != null && state.y < lane.pitY) {
+              state.dead = true;
+              if (options.onFallDeath) options.onFallDeath();
+              return;
+            }
+
+            state.nearDoor = null;
+            if (laneDoors) {
+              for (let i = 0; i < laneDoors.length; i++) {
+                const d = laneDoors[i];
+                if (d.fromLane !== state.lane) continue;
+                if (Math.abs(state.x - d.x) <= DOOR_RADIUS) {
+                  state.nearDoor = d;
+                  break;
+                }
+              }
+            }
+
+            const interactPressed = !!(keys.interact || keys.switchDepth);
+            if (interactPressed && !state.prevInteract && state.nearDoor) {
+              const d = state.nearDoor;
+              state.lane = d.toLane;
+              state.x = d.landX != null ? d.landX : state.x;
+              state.y = d.landY != null ? d.landY : state.y;
+              state.vx = 0; state.vy = 0;
+              state.grounded = false;
+              state.nearDoor = null;
+              if (options.onLaneShift) options.onLaneShift(d.fromLane, d.toLane);
+            }
+            state.prevInteract = interactPressed;
+          }
+        };
+      }
+
+      return { create: create };
+    })();
+
+    // -------------------------------------------------------------------------
+    // 5. Zelda2CombatV3 (Sidescroll Combat with Dynamic Weapon Damage)
+    // -------------------------------------------------------------------------
+    (function (global) {
+      const THRUST_DURATION = 0.20;
+      const THRUST_COOLDOWN = 0.15;
+      const THRUST_REACH = 34;
+      const THRUST_RANGE = 24;
+      const PLAYER_RADIUS = 14;
+      const ENEMY_RADIUS = 16;
+      const INVULN_DURATION = 0.8;
+      const KNOCKBACK = 120;
+
+      const HITBOX_Y_OFFSET = { high: 28, standing: 18, low: 6, jump: -4 };
+
+      function create(physics, options) {
+        options = options || {};
+        const state = {
+          health: options.maxHealth || 8, maxHealth: options.maxHealth || 8,
+          weaponDamage: options.weaponDamage || 1,
+          dead: false, attacking: false, attackForm: 'standing',
+          attackTimer: 0, attackCooldown: 0, invulnTimer: 0, prevAttackKey: false
+        };
+
+        function applyDamageToPlayer(fromX) {
+          state.health -= 1;
+          state.invulnTimer = INVULN_DURATION;
+          const dir = physics.x >= fromX ? 1 : -1;
+          if (physics.applyKnockback) physics.applyKnockback(dir * KNOCKBACK, 160);
+          if (options.onDamage) options.onDamage(Math.max(state.health, 0), state.maxHealth);
+          if (state.health <= 0 && !state.dead) {
+            state.dead = true;
+            if (options.onDeath) options.onDeath();
+          }
+        }
+
+        return {
+          getHealth: () => state.health,
+          getMaxHealth: () => state.maxHealth,
+          heal: (amount) => {
+            state.health = Math.min(state.maxHealth, state.health + (amount || 1));
+            if (options.onDamage) options.onDamage(state.health, state.maxHealth);
+          },
+          setWeaponDamage: (dmg) => { state.weaponDamage = dmg || 1; },
+          isAttacking: () => state.attacking,
+          getAttackForm: () => state.attackForm,
+          update: function (dt, keys, enemies) {
+            if (state.dead) return;
+            dt = dt || 0.016;
+
+            if (state.attackCooldown > 0) state.attackCooldown -= dt;
+            if (state.invulnTimer > 0) state.invulnTimer -= dt;
+
+            const attackKey = !!(keys.attack || keys.attackAlt1 || keys.attackAlt2);
+            if (attackKey && !state.prevAttackKey && state.attackCooldown <= 0 && !state.attacking) {
+              state.attacking = true;
+              state.attackTimer = THRUST_DURATION;
+              state.attackCooldown = THRUST_COOLDOWN;
+
+              if (!physics.grounded) {
+                state.attackForm = 'jump';
+              } else if (keys.up) {
+                state.attackForm = 'high';
+              } else if (keys.down || physics.crouching) {
+                state.attackForm = 'low';
+              } else {
+                state.attackForm = 'standing';
+              }
+            }
+            state.prevAttackKey = attackKey;
+
+            if (state.attacking) {
+              state.attackTimer -= dt;
+              if (state.attackTimer <= 0) {
+                state.attacking = false;
+              } else if (enemies && enemies.length) {
+                const dir = physics.facing === 'right' ? 1 : -1;
+                const hitX = physics.x + dir * THRUST_REACH;
+                const hitY = physics.y + (HITBOX_Y_OFFSET[state.attackForm] || 18);
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                  const e = enemies[i];
+                  if (!e || e.dead || e.lane !== physics.lane) continue;
+                  const dx = e.x - hitX;
+                  const dy = e.y - hitY;
+                  const r = THRUST_RANGE + (e.radius || ENEMY_RADIUS);
+                  if (Math.sqrt(dx * dx + dy * dy) <= r) {
+                    e.hp = (e.hp || 1) - state.weaponDamage;
+                    if (options.onEnemyHit) options.onEnemyHit(e);
+                    if (e.hp <= 0) {
+                      e.dead = true;
+                      if (options.onKillEnemy) options.onKillEnemy(e);
+                    }
+                  }
+                }
+              }
+            }
+
+            if (state.invulnTimer <= 0 && enemies && enemies.length) {
+              for (let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                if (!e || e.dead || e.lane !== physics.lane) continue;
+                const dx = e.x - physics.x;
+                const dy = e.y - (physics.y + 16);
+                const r = PLAYER_RADIUS + (e.radius || ENEMY_RADIUS);
+                if (Math.sqrt(dx * dx + dy * dy) <= r) {
+                  applyDamageToPlayer(e.x);
+                  break;
+                }
+              }
+            }
+          }
+        };
+      }
+
+      global.Zelda2CombatV3 = { create: create };
+    })(window);
+
+    // -------------------------------------------------------------------------
+    // 6. SpriteSystemV3
+    // -------------------------------------------------------------------------
+    (function (global) {
+      function prep(tex) {
+        if (!tex) return tex;
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestFilter;
+        tex.generateMipmaps = false;
+        return tex;
+      }
+
+      function create(options) {
+        options = options || {};
+        const loader = options.loader || new THREE.TextureLoader();
+        const texMap = {};
+        const raw = options.textures || {};
+
+        function loadList(list) {
+          if (!Array.isArray(list)) list = [list];
+          return list.map(item => typeof item === 'string' ? prep(loader.load(item)) : prep(item));
+        }
+
+        if (Array.isArray(raw)) {
+          texMap.down = loadList(raw);
+          texMap.up = texMap.down; texMap.left = texMap.down; texMap.right = texMap.down;
+        } else {
+          ['down', 'up', 'left', 'right'].forEach(dir => {
+            texMap[dir] = loadList(raw[dir] || raw.down || []);
+          });
+        }
+
+        const mat = new THREE.MeshBasicMaterial({
+          map: texMap.down[0] || null, transparent: true, side: THREE.DoubleSide, depthWrite: true
         });
-    </script>
+
+        const w = options.width || 40, h = options.height || 40;
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+
+        return {
+          mesh: mesh, material: mat, width: w, height: h,
+          radius: w * 0.45,
+          faceCamera: function (cam) { mesh.lookAt(cam.position.x, mesh.position.y, cam.position.z); }
+        };
+      }
+
+      function createPlayer(loader, options) {
+        return create({
+          loader: loader, width: 45, height: 45,
+          textures: {
+            up:    ['assets/player/NORTH.png', 'assets/player/VRMANBACK.png'],
+            down:  ['assets/player/SOUTH.png', 'assets/player/VRMANBACK.png'],
+            left:  ['assets/player/WEST.png', 'assets/player/VRMANL.png'],
+            right: ['assets/player/EAST.png', 'assets/player/VRMANR.png']
+          }
+        });
+      }
+
+      function createEnemy(texPath, loader, options) {
+        options = options || {};
+        return create({
+          loader: loader, width: options.width || 40, height: options.height || 40,
+          textures: Array.isArray(texPath) ? texPath : [texPath]
+        });
+      }
+
+      global.SpriteSystemV3 = { create: create, createPlayer: createPlayer, createEnemy: createEnemy };
+    })(window);
+
+    // -------------------------------------------------------------------------
+    // 7. HpBarSystemV3 (Canvas Texture Dynamic Fallback)
+    // -------------------------------------------------------------------------
+    (function (global) {
+      function create(scene, loader) {
+        loader = loader || new THREE.TextureLoader();
+        const cache = {}, entries = [];
+
+        function generateBarTexture(current, max) {
+          const key = `gen_${current}_${max}`;
+          if (cache[key]) return cache[key];
+
+          const canvas = document.createElement('canvas');
+          canvas.width = 64; canvas.height = 12;
+          const ctx = canvas.getContext('2d');
+
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, 64, 12);
+          ctx.strokeStyle = '#00ff66';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(1, 1, 62, 10);
+
+          const pct = Math.max(0, Math.min(1, current / max));
+          ctx.fillStyle = pct > 0.5 ? '#00ff66' : pct > 0.25 ? '#ffcc00' : '#ff3333';
+          ctx.fillRect(3, 3, Math.floor(58 * pct), 6);
+
+          const tex = new THREE.CanvasTexture(canvas);
+          tex.magFilter = THREE.NearestFilter;
+          tex.minFilter = THREE.NearestFilter;
+          cache[key] = tex;
+          return tex;
+        }
+
+        return {
+          attach: function (target, opts) {
+            opts = opts || {};
+            const max = opts.max != null ? opts.max : 3;
+            const current = opts.current != null ? opts.current : max;
+            const mat = new THREE.MeshBasicMaterial({
+              map: generateBarTexture(current, max), transparent: true, depthWrite: false, side: THREE.DoubleSide
+            });
+            const bar = new THREE.Mesh(new THREE.PlaneGeometry(opts.width || 36, opts.height || 8), mat);
+            scene.add(bar);
+            const entry = { target: target, bar: bar, max: max, current: current, offsetY: opts.offsetY || 36 };
+            entries.push(entry);
+            target.userData = target.userData || {};
+            target.userData.hpBar = entry;
+            return entry;
+          },
+          set: function (target, current) {
+            const e = target.userData && target.userData.hpBar; if (!e) return;
+            e.current = Math.max(0, Math.min(e.max, current | 0));
+            e.bar.material.map = generateBarTexture(e.current, e.max);
+            e.bar.material.needsUpdate = true;
+            e.bar.visible = e.current > 0;
+          },
+          update: function (camera) {
+            entries.forEach(e => {
+              if (!e.target) return;
+              e.bar.position.set(e.target.position.x, e.target.position.y + e.offsetY, e.target.position.z);
+              e.bar.lookAt(camera.position.x, e.bar.position.y, camera.position.z);
+            });
+          }
+        };
+      }
+      global.HpBarSystemV3 = { create: create };
+    })(window);
+
+    // -------------------------------------------------------------------------
+    // 8. Collision & Depth Systems
+    // -------------------------------------------------------------------------
+    (function (global) {
+      global.CollisionSystemV3 = {
+        create: function () {
+          return {
+            resolveEntityOverlaps: function (player, enemies) {
+              if (!player || !player.mesh || !enemies) return;
+              const ppos = player.mesh.position, pr = player.radius || 18;
+              enemies.forEach(e => {
+                if (!e || !e.mesh || e.dead) return;
+                const opos = e.mesh.position, er = e.radius || 18;
+                let dx = opos.x - ppos.x, dz = opos.z - ppos.z;
+                let dist = Math.sqrt(dx * dx + dz * dz) || 0.0001;
+                if (dist < pr + er) {
+                  const pen = (pr + er - dist) + 0.1;
+                  ppos.x -= (dx / dist) * pen * 0.5;
+                  opos.x += (dx / dist) * pen * 0.5;
+                }
+              });
+            }
+          };
+        }
+      };
+
+      global.DepthStackV3 = {
+        buildColorLayers: function (scene, layerDefs) {
+          const group = new THREE.Group();
+          layerDefs.forEach(def => {
+            const mat = new THREE.MeshBasicMaterial({ color: def.color, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(def.width, def.height), mat);
+            mesh.position.set(def.x || 0, def.y != null ? def.y : def.height * 0.5, def.z);
+            group.add(mesh);
+          });
+          scene.add(group);
+        }
+      };
+    })(window);
+  </script>
+
+  <!-- MAIN ENGINE INSTANTIATION & RENDER LOOP -->
+  <script>
+    (function () {
+      const container = document.getElementById('canvas-container');
+      const statusEl = document.getElementById('status');
+      const heartsEl = document.getElementById('hearts');
+      const equipEl = document.getElementById('equip');
+
+      window._kills = 0;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x010814);
+      scene.fog = new THREE.FogExp2(0x010814, 0.0016);
+
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      const textureLoader = new THREE.TextureLoader();
+
+      DepthStackV3.buildColorLayers(scene, [
+        { z: -300, color: 0x030d1c, width: 1600, height: 600, y: 100 },
+        { z: -150, color: 0x08182b, width: 1400, height: 500, y: 80 }
+      ]);
+
+      const ambientLight = new THREE.AmbientLight(0x224466, 1.4);
+      scene.add(ambientLight);
+
+      const torchLight = new THREE.PointLight(0x00aaff, 2.8, 400);
+      scene.add(torchLight);
+
+      function cropTileTexture(atlasUrl, sx, sy, sw, sh, repeatX, repeatY) {
+        const canvas = document.createElement('canvas');
+        canvas.width = sw; canvas.height = sh;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestFilter;
+
+        const img = new Image();
+        img.onload = function () {
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+          tex.needsUpdate = true;
+          if (repeatX && repeatY) tex.repeat.set(repeatX, repeatY);
+        };
+        img.src = atlasUrl;
+        return tex;
+      }
+
+      const atlasPath = 'assets/tilesets/temple_blue/temple_blue.tiles.png';
+      const wallMat = new THREE.MeshStandardMaterial({ map: cropTileTexture(atlasPath, 128, 272, 16, 16, 16, 2), roughness: 0.8 });
+      const floorMat = new THREE.MeshStandardMaterial({ map: cropTileTexture(atlasPath, 208, 96, 16, 16, 8, 2), roughness: 0.8 });
+
+      const audio = AudioSystemV3.create({ musicVolume: 0.3, sfxVolume: 0.5 });
+      const playerState = PlayerStateV3.load();
+
+      function paintHearts(hp, max) {
+        let hStr = '';
+        for (let i = 0; i < max; i++) hStr += (i < hp) ? '&hearts;' : '&#9825;';
+        heartsEl.innerHTML = hStr;
+      }
+
+      function paintEquip() {
+        const id = inv ? inv.getEquipped() : 'woodsword';
+        const dmg = InventorySystemV3.weaponDamage(id);
+        const name = (InventorySystemV3.CATALOG[id] || {}).name || id;
+        const keysN = inv ? inv.count('smallkey') : 0;
+        equipEl.innerHTML = `EQUIPPED: ${name} (${dmg} dmg) &bull; Keys: ${keysN} &bull; Kills: ${window._kills}`;
+        if (combat) combat.setWeaponDamage(dmg);
+      }
+
+      const inv = InventorySystemV3.create({
+        starter: ['woodsword'],
+        onEquip: function () { paintEquip(); }
+      });
+
+      const hpBars = HpBarSystemV3.create(scene, textureLoader);
+
+      const LANE_FRONT_Z = 40;
+      const LANE_BACK_Z = -40;
+
+      const lanes = [
+        { z: LANE_FRONT_Z, pitY: -300, platforms: [{ x0: -400, x1: 150, y: 0 }, { x0: 220, x1: 650, y: 0 }, { x0: 100, x1: 300, y: 80 }] },
+        { z: LANE_BACK_Z, pitY: -300, platforms: [{ x0: -300, x1: 500, y: 20 }, { x0: -150, x1: 50, y: 100 }] }
+      ];
+
+      const laneDoors = [
+        { x: 120, fromLane: 0, toLane: 1, landX: 120, landY: 20 },
+        { x: 120, fromLane: 1, toLane: 0, landX: 120, landY: 0 }
+      ];
+
+      const physics = SidescrollPhysicsV3.create({
+        lanes: lanes, laneDoors: laneDoors, startX: -300, startY: 10, startLane: 0,
+        onLaneShift: () => audio.sfx('assets/fanfare/door.wav')
+      });
+
+      const combat = Zelda2CombatV3.create(physics, {
+        maxHealth: playerState.getMaxHp(),
+        weaponDamage: InventorySystemV3.weaponDamage('woodsword'),
+        onDamage: (hp, max) => {
+          audio.sfx('assets/fanfare/hit.wav');
+          paintHearts(hp, max);
+          hpBars.set(playerSprite.mesh, hp);
+        },
+        onEnemyHit: (enemy) => {
+          audio.sfx('assets/music/$84-Scratch.wav');
+          hpBars.set(enemy.mesh, enemy.hp);
+        },
+        onKillEnemy: (enemy) => {
+          window._kills += 1;
+          audio.sfx('assets/fanfare/kill.wav');
+          if (enemy.mesh) enemy.mesh.visible = false;
+          paintEquip();
+        }
+      });
+
+      paintHearts(combat.getHealth(), combat.getMaxHealth());
+
+      // Map Floors and Background
+      lanes.forEach(lane => {
+        lane.platforms.forEach(p => {
+          const w = p.x1 - p.x0;
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 20, 40), floorMat);
+          mesh.position.set(p.x0 + w / 2, p.y - 10, lane.z);
+          scene.add(mesh);
+        });
+      });
+
+      const backWallMesh = new THREE.Mesh(new THREE.PlaneGeometry(1400, 500), wallMat);
+      backWallMesh.position.set(100, 100, -80);
+      scene.add(backWallMesh);
+
+      // Player Entity
+      const playerSprite = SpriteSystemV3.createPlayer(textureLoader);
+      scene.add(playerSprite.mesh);
+      hpBars.attach(playerSprite.mesh, { max: 8, current: combat.getHealth(), offsetY: 30 });
+
+      // Enemy Entities
+      const slimeSprite = SpriteSystemV3.createEnemy('assets/enemies/SLIME-1.png', textureLoader, { width: 32, height: 32 });
+      scene.add(slimeSprite.mesh);
+
+      const enemies = [
+        { x: 300, y: 10, lane: 0, dead: false, hp: 3, maxHp: 3, radius: 15, mesh: slimeSprite.mesh }
+      ];
+      hpBars.attach(slimeSprite.mesh, { max: 3, current: 3, offsetY: 24 });
+
+      // Interactables (Chests, Jars, Doors)
+      const interactables = [];
+
+      function createProp(type, x, y, laneIdx, iconPath, width, height) {
+        const tex = textureLoader.load(iconPath);
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestFilter;
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat);
+        const z = lanes[laneIdx].z;
+        mesh.position.set(x, y + height / 2, z);
+        scene.add(mesh);
+
+        const prop = { mesh: mesh, type: type, x: x, y: y, lane: laneIdx, open: false };
+        interactables.push(prop);
+        return prop;
+      }
+
+      createProp('CHESTBG', -50, 0, 0, 'assets/storage/bigchestclosed.png', 32, 28);
+      createProp('JAR', 50, 0, 0, 'assets/storage/JAR.png', 24, 24);
+
+      const collisionSystem = CollisionSystemV3.create();
+
+      const keys = {
+        left: false, right: false, up: false, down: false,
+        jump: false, attack: false, attackAlt1: false, attackAlt2: false,
+        interact: false, switchDepth: false
+      };
+
+      // Interact Handler
+      function tryInteract() {
+        let best = null, bestD = 45;
+        for (let i = 0; i < interactables.length; i++) {
+          const it = interactables[i];
+          if (!it.mesh || !it.mesh.visible || it.open || it.lane !== physics.lane) continue;
+          const d = Math.abs(physics.x - it.x);
+          if (d < bestD) { bestD = d; best = it; }
+        }
+
+        if (!best) {
+          statusEl.textContent = 'Nothing to use nearby';
+          return;
+        }
+
+        if (best.type === 'CHESTBG') {
+          best.open = true;
+          textureLoader.load('assets/chests/BIGCHESTOPEN.png', tex => {
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            best.mesh.material.map = tex;
+            best.mesh.material.needsUpdate = true;
+          });
+          inv.give('metalsword');
+          inv.equip('metalsword');
+          audio.sfx('assets/fanfare/itemfanfare.wav');
+          statusEl.textContent = 'Opened Big Chest! Unlocked Metal Sword!';
+          paintEquip();
+        } else if (best.type === 'JAR') {
+          best.open = true;
+          best.mesh.visible = false;
+          combat.heal(2);
+          audio.sfx('assets/fanfare/itemfanfare.wav');
+          statusEl.textContent = 'Smashed Jar! Recovered Hearts!';
+        }
+      }
+
+      window.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+        if (e.code === 'KeyA') keys.left = true;
+        if (e.code === 'KeyD') keys.right = true;
+        if (e.code === 'KeyW') keys.up = true;
+        if (e.code === 'KeyS') keys.down = true;
+        if (e.code === 'Space') keys.jump = true;
+        if (e.code === 'KeyJ') keys.attack = true;
+        if (e.code === 'KeyB') keys.attackAlt1 = true;
+        if (e.code === 'KeyK') keys.attackAlt2 = true;
+        if (e.code === 'KeyE') keys.interact = true;
+        if (e.code === 'KeyF') keys.switchDepth = true;
+
+        if (k === '1') { inv.equip('woodsword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
+        if (k === '2') { inv.give('metalsword'); inv.equip('metalsword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
+        if (k === '3') { inv.give('plasmasword'); inv.equip('plasmasword'); audio.sfx('assets/fanfare/itemfanfare.wav'); }
+
+        if (k === 'f' || k === 'e') tryInteract();
+
+        if (e.code === 'Escape') {
+          try {
+            if (typeof PlayerStateV3 !== 'undefined') PlayerStateV3.load().setRoom('index.html').save();
+          } catch (err) {}
+          audio.stopMusic();
+          location.href = 'index.html';
+        }
+      });
+
+      window.addEventListener('keyup', e => {
+        if (e.code === 'KeyA') keys.left = false;
+        if (e.code === 'KeyD') keys.right = false;
+        if (e.code === 'KeyW') keys.up = false;
+        if (e.code === 'KeyS') keys.down = false;
+        if (e.code === 'Space') keys.jump = false;
+        if (e.code === 'KeyJ') keys.attack = false;
+        if (e.code === 'KeyB') keys.attackAlt1 = false;
+        if (e.code === 'KeyK') keys.attackAlt2 = false;
+        if (e.code === 'KeyE') keys.interact = false;
+        if (e.code === 'KeyF') keys.switchDepth = false;
+      });
+
+      paintEquip();
+      let lastT = performance.now();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const now = performance.now();
+        const dt = Math.min(0.05, (now - lastT) / 1000);
+        lastT = now;
+
+        physics.update(dt, keys);
+        combat.update(dt, keys, enemies);
+        collisionSystem.resolveEntityOverlaps(playerSprite, enemies);
+
+        const currentZ = physics.lane === 0 ? LANE_FRONT_Z : LANE_BACK_Z;
+        playerSprite.mesh.position.set(physics.x, physics.y + 18, currentZ);
+        playerSprite.faceCamera(camera);
+
+        if (!enemies[0].dead) {
+          slimeSprite.mesh.position.set(enemies[0].x, enemies[0].y + 16, LANE_FRONT_Z);
+          slimeSprite.faceCamera(camera);
+        }
+
+        interactables.forEach(it => {
+          if (it.mesh && it.mesh.visible) it.mesh.lookAt(camera.position.x, it.mesh.position.y, camera.position.z);
+        });
+
+        torchLight.position.set(physics.x, physics.y + 30, currentZ + 20);
+        hpBars.update(camera);
+
+        const targetCamZ = physics.lane === 0 ? 250 : 200;
+        camera.position.x += (physics.x - camera.position.x) * Math.min(dt * 4, 1);
+        camera.position.y += ((physics.y + 50) - camera.position.y) * Math.min(dt * 4, 1);
+        camera.position.z += (targetCamZ - camera.position.z) * Math.min(dt * 3, 1);
+        camera.lookAt(physics.x, physics.y + 25, physics.lane === 0 ? 30 : -30);
+
+        statusEl.textContent = `X:${physics.x.toFixed(0)} Y:${physics.y.toFixed(0)} Lane:${physics.lane} Grounded:${physics.grounded} HP:${combat.getHealth()}/8`;
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    })();
+  </script>
 </body>
 </html>

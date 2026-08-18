@@ -1,0 +1,498 @@
+~/Legacy_Of_Chroma_New$ tree assets/ -I "node_modules|.git"
+assets/
+├── boss
+│   ├── cactus_boss.png
+│   ├── centipede_boss.png
+│   ├── eye_boss.png
+│   ├── final_boss.png
+│   ├── ghost_boss.png
+│   ├── jelly_boss.png
+│   ├── knight_boss.png
+│   └── shadow_boss.png
+├── chromac.jpg
+├── doors
+│   ├── bosslock.png
+│   ├── doorlock.png
+│   ├── finallock.png
+│   ├── ladder_down.png
+│   └── ladder_up.png
+├── Effects
+│   ├── bevel-pixi-filter.js
+│   ├── crt-pixi-filter.js
+│   ├── glow-pixi-filter.js
+│   ├── outline-pixi-filter.js
+│   ├── pixi-filters
+│   │   ├── filter-bevel.js
+│   │   ├── filter-crt.js
+│   │   ├── filter-glow.js
+│   │   ├── filter-outline.js
+│   │   └── filter-rgb-split.js
+│   └── rgb-split-pixi-filter.js
+├── enemies
+│   ├── ARCFRONT.png
+│   ├── BOOEY-1-0.png
+│   ├── CHROMAC-1.png
+│   ├── Chromac Final Form.png
+│   ├── CHROMAC FORM 2.png
+│   ├── CHROMAC FORM 3.png
+│   ├── CYPAKD-1.png
+│   ├── CYPAKL.png
+│   ├── CYPAKR.png
+│   ├── CYPAKU-1.png
+│   ├── D3BOSS.png
+│   ├── ENEMY.png
+│   ├── GHOSTHARDL.png
+│   ├── GHOSTHARDR.png
+│   ├── GIANTNIBDOWN.png
+│   ├── GIANTNIBL.png
+│   ├── GIANTNIBR.png
+│   ├── GIANTNIBUP.png
+│   ├── GOODBYEL.png
+│   ├── GOODBYER.png
+│   ├── HELLOL.png
+│   ├── HELLOR.png
+│   ├── KNIGHTHARDDOWN (1).png
+│   ├── KNIGHTHARDLEFT.png
+│   ├── KNIGHTHARDR.png
+│   ├── KNIGHTHARDUP.png
+│   ├── KNIGHTL-1.png
+│   ├── KNIGHTR-1.png
+│   ├── KNIGHTUP-1-0.png
+│   ├── KNIGHTUP-1.png
+│   ├── LEAFY-1-0.png
+│   ├── NEONIBDOWN (1).png
+│   ├── NEONIBLEFT.png
+│   ├── NEONIBRIGHT.png
+│   ├── NEONIBUP.png
+│   ├── NEONSKULL-1.png
+│   ├── NEONSKULLHARD.png
+│   ├── NEOPEDEDOWN.png
+│   ├── NEOPEDELEFT.png
+│   ├── NEOPEDERIGHT.png
+│   ├── NEOPEDEUP.png
+│   ├── NIBDOWN-1.png
+│   ├── NIBLEFT-1.png
+│   ├── NIBRIGHT-1.png
+│   ├── NIBUP-1.png
+│   ├── RUBY-1-1.png
+│   ├── RUBY-1-2.png
+│   ├── SLIME-1-0.png
+│   ├── SLIME-1.png
+│   ├── SLIME-2.png
+│   ├── SLIMEHARD-1.png
+│   ├── SLIMEHARD-2.png
+│   ├── SOLDIERHARDL.png
+│   ├── SOLDIERHARDR (2).png
+│   ├── SOLDIERHARDR.png
+│   ├── SOLDIERL-1-0.png
+│   ├── SOLDIERL-1.png
+│   ├── SOLDIERRIGHT.png
+│   └── SUNNY-1.png
+├── events-tools
+│   ├── cameratools.js
+│   ├── commontools.js
+│   ├── inputtools.js
+│   ├── networktools.js
+│   ├── objecttools.js
+│   ├── runtimescenetools.js
+│   ├── soundtools.js
+│   ├── storagetools.js
+│   ├── stringtools.js
+│   └── windowtools.js
+├── fanfare
+│   ├── chest.wav
+│   ├── itemfanfare.wav
+│   ├── secret.wav
+│   ├── smchestepen.wav
+│   └── whistle.wav
+├── fonts
+│   ├── Px437_IBM_CGA.ttf
+│   ├── Px437_TandyNew_225-2y.ttf
+│   ├── Px437_TandyNew_TV-2y.ttf
+│   ├── Px437_TandyNew_TV.ttf
+│   ├── Px437_TandyOld_225.ttf
+│   ├── Px437_TandyOld_TV-2y.ttf
+│   └── Px437_VGA_SquarePx.ttf
+├── hud
+│   ├── 1-1.png
+│   ├── 1HEART.png
+│   ├── 1HP.png
+│   ├── 2-1.png
+│   ├── 2HP.png
+│   ├── 2LIFE-1.png
+│   ├── 3HP.png
+│   ├── 3LIFE-1.png
+│   ├── 4HP.png
+│   ├── 4LIFE-1.png
+│   ├── 5HP.png
+│   ├── 5LIFE-1.png
+│   ├── 6HP.png
+│   ├── 7HP.png
+│   ├── 8HO.png
+│   ├── ENEMY1HP.png
+│   ├── ENEMY2HP.png
+│   ├── ENEMY3HP.png
+│   ├── ENEMY4HP.png
+│   ├── ENEMY5HP.png
+│   ├── ENEMY6HP.png
+│   ├── ENEMY7HP.png
+│   └── ENEMY8HP.png
+├── inventory
+│   ├── ARROW DOWN.png
+│   ├── ARROW LEFT.png
+│   ├── ARROW LIGHT DOWN.png
+│   ├── ARROW LIGHT LEFT.png
+│   ├── ARROW LIGHT RIGHT.png
+│   ├── ARROW LIGHT UP.png
+│   ├── ARROW RIGHT.png
+│   ├── ARROW UP.png
+│   ├── BIG KEY.png
+│   ├── bomb.png
+│   ├── BOMBS-1.png
+│   ├── BOMBS.png
+│   ├── BOW DOWN.png
+│   ├── BOW LEFT.png
+│   ├── bow.png
+│   ├── BOW RIGHT.png
+│   ├── BOW UP.png
+│   ├── CHROMAC KEY.png
+│   ├── CONTAINER-1.png
+│   ├── crossbow_retracted.png
+│   ├── cross_weapon.png
+│   ├── cross_weapon_toss.png
+│   ├── GAUNTLET-1.png
+│   ├── hookshot.png
+│   ├── ICICLE-1.png
+│   ├── inventory.js
+│   ├── inventorytools.js
+│   ├── LADDER-1.png
+│   ├── LANTERN-1.png
+│   ├── METALSWORD.png
+│   ├── MUSICNOTE-1.png
+│   ├── PLASMASWORD.png
+│   ├── RAFT-1-0.png
+│   ├── RAFT-1.png
+│   ├── SMALL KEY.png
+│   ├── sword2_left.png
+│   ├── sword2_right.png
+│   ├── sword2_straight.png
+│   ├── sword3_left.png
+│   ├── sword3_right.png
+│   ├── sword3_straight.png
+│   ├── sword_left.png
+│   ├── sword_right.png
+│   ├── sword_straight.png
+│   ├── TPIECE.png
+│   ├── UP-1.png
+│   └── WOODSWORD-1.png
+├── items
+│   ├── bkey.png
+│   ├── finalkey.png
+│   ├── gauntlet.png
+│   ├── ladder.png
+│   ├── lantern.png
+│   ├── note.png
+│   ├── raft.png
+│   ├── recovery.png
+│   ├── skey.png
+│   └── trpiece.png
+├── locks
+│   ├── BOSSDOOR-1-0.png
+│   └── LOCKEDDOOR-1.png
+├── maps
+│   ├── create3DTextPlane.js
+│   ├── field_legacy.json
+│   ├── ladx_forest_legacy.json
+│   ├── lttp_palace1_legacy.json
+│   ├── multi_floor_dungeon_legacy.json
+│   ├── overworld_roads_legacy.json
+│   ├── palace1_legacy (1).json
+│   ├── palace1_legacy.json
+│   ├── palace2_legacy.json
+│   ├── palace3_legacy.json
+│   ├── palace4_legacy.json
+│   ├── palace5_legacy.json
+│   ├── palace6_legacy.json
+│   ├── palace7_legacy.json
+│   ├── room1_legacy.json
+│   ├── room1_v2_legacy.json
+│   ├── temp_playtest_legacy.json
+│   ├── TextBoardLoader.js
+│   └── zelda2_palace1_legacy.json
+├── models
+│   ├── ARMOR
+│   ├── BIGITEMS
+│   ├── BOSS
+│   ├── DOORS
+│   ├── ENEMY
+│   ├── MAPS
+│   ├── OBSTACLES
+│   ├── PARTICLES
+│   ├── PLAYER
+│   ├── STORAGE
+│   └── WEAPONS
+├── music
+│   ├── $81-Kick.wav
+│   ├── $84-Scratch.wav
+│   ├── $85-Timpani.wav
+│   ├── $8F-Hi-Bongo.wav
+│   ├── 02 Beginning of the Journey.mp3
+│   ├── 07 Open Treasure Box.mp3
+│   ├── 08 Hyrule Field Main Theme.mp3
+│   ├── 08 Item Catch.mp3
+│   ├── 09 Kakariko Village.mp3
+│   ├── 09 Small Item Catch.mp3
+│   ├── 11 Battle.mp3
+│   ├── 13 Boss Battle.mp3
+│   ├── 13 Dank Dungeons.mp3
+│   ├── 14 Boss Clear.mp3
+│   ├── 14 Lost Ancient Ruins.mp3
+│   ├── 19 Hyrule Field Main Theme.mp3
+│   ├── 21 Dark Golden Land.mp3
+│   ├── 236 Ikana Valley.mp3
+│   ├── 239 Music Box House.mp3
+│   ├── 244 Stone Tower Temple (Illusion).mp3
+│   └── 62 Ice Cavern.mp3
+├── npc
+│   └── OLDMAN1-1.png
+├── obstacles
+│   ├── bigboulder.png
+│   ├── box1.png
+│   ├── box2.png
+│   ├── crackedwall.png
+│   ├── jar1.png
+│   ├── jar2.png
+│   ├── smboulder.png
+│   ├── torch1.png
+│   └── tree1.png
+├── particle
+│   ├── arrows_wood.png
+│   ├── BOMB EXPLODE.png
+│   ├── bomb.png
+│   ├── DOT2.png
+│   ├── EXPLODE-1.png
+│   ├── FIREBALL-1.png
+│   └── orb.png
+├── player
+│   ├── BIGKEY-1.png
+│   ├── BIGKEY-2.png
+│   ├── BIGKEY.png
+│   ├── BOMBS-12.png
+│   ├── BOMBS-2.png
+│   ├── BOMBS2.png
+│   ├── BOMBTOSS-1.png
+│   ├── BOMBTOSS-2.png
+│   ├── BOWDOWN.png
+│   ├── BOWLEFT.png
+│   ├── BOWRIGHT.png
+│   ├── BOWUP-1.png
+│   ├── BOWUP.png
+│   ├── CHROMACKEY-1.png
+│   ├── CHROMACKEY-2.png
+│   ├── CHROMACKEY.png
+│   ├── EAST.png
+│   ├── GAUNTLET-12.png
+│   ├── GAUNTLET-2.png
+│   ├── GAUNTLET.png
+│   ├── GET RAFT.png
+│   ├── GETSWORD1.png
+│   ├── GETSWORD2.png
+│   ├── GETSWORD3.png
+│   ├── HEART.png
+│   ├── HOLDINGBOMB-1.png
+│   ├── HOLDINGBOMB.png
+│   ├── ICEBOW1.png
+│   ├── ICEBOW.png
+│   ├── LADDER.png
+│   ├── LANTERN HOLD.png
+│   ├── LAZER.png
+│   ├── NORTH.png
+│   ├── PIECE.png
+│   ├── RAFTDOWN.png
+│   ├── RAFTLEFT.png
+│   ├── RAFTRIGHT.png
+│   ├── RAFTUP.png
+│   ├── SMALLKEY-12.png
+│   ├── SMALLKEY-2.png
+│   ├── SMALLKEY.png
+│   ├── SOUTH.png
+│   ├── SWORDDOWN-1.png
+│   ├── SWORDLEFT-1.png
+│   ├── SWORDLEFT.png
+│   ├── SWORDRIGHT.png
+│   ├── SWORDUP-1.png
+│   ├── SWORDUP.png
+│   ├── VRMANBACK-1.png
+│   ├── VRMANBACK.png
+│   ├── VRMANL.png
+│   ├── VRMANR-1.png
+│   ├── VRMANR.png
+│   └── WEST.png
+├── projectile
+│   ├── ARROW LIGHT UP.png
+│   ├── ARROW UP.png
+│   ├── BOMBS-1.png
+│   ├── DOWN-1.png
+│   ├── ICICLE-1.png
+│   ├── LAZERLEFT (1).png
+│   ├── LAZERLEFT (2).png
+│   └── LAZERLEFT (3).png
+├── secret_factory
+│   ├── CHROMAC-1.png
+│   ├── CHROMAC FORM 2.png
+│   ├── CHROMAC FORM 3.png
+│   ├── SECRET FACTORY 2.jpg
+│   ├── SECRET_FACTORY_INVERTED.jpg
+│   └── SECRET FACTORY.jpg
+├── shaders
+├── storage
+│   ├── bigchestclosed.png
+│   └── smallchestclosed.png
+├── story
+│   ├── DEMO 1 END.jpg
+│   └── TITLE SCREEN.jpg
+├── textures
+│   ├── bark1.jpg
+│   ├── bark2.jpg
+│   ├── dirt1.jpg
+│   ├── glass1.jpg
+│   ├── glass2.jpg
+│   ├── grass1.jpg
+│   ├── housewall1.jpg
+│   ├── housewall2.jpg
+│   ├── housewall3.jpg
+│   ├── ladder1.jpg
+│   ├── magma1.jpg
+│   ├── metal1.jpg
+│   ├── metal2.jpg
+│   ├── metal3.jpg
+│   ├── planks1.jpg
+│   ├── raft1.jpg
+│   ├── raft2.jpg
+│   ├── rcok2.jpg
+│   ├── rcok3.jpg
+│   ├── rock1.jpg
+│   ├── rock2.jpg
+│   ├── rock3.jpg
+│   ├── rock4.jpg
+│   ├── rock5.jpg
+│   ├── roof2.jpg
+│   ├── roof3.jpg
+│   ├── rooff1.jpg
+│   ├── sand1.jpg
+│   ├── sand2.jpg
+│   ├── sand3.jpg
+│   ├── sand4.jpg
+│   ├── skybox
+│   │   ├── day1.jpg
+│   │   ├── day2.jpg
+│   │   ├── day3.jpg
+│   │   ├── day4.jpg
+│   │   ├── day5.jpg
+│   │   ├── night1.jpg
+│   │   ├── night2.jpg
+│   │   ├── night3.jpg
+│   │   ├── night4.jpg
+│   │   ├── overcast1.jpg
+│   │   ├── overcast2.jpg
+│   │   ├── overcast3.jpg
+│   │   └── stomry1.jpg
+│   ├── stone1.jpg
+│   ├── stone2.jpg
+│   ├── stone3.jpg
+│   ├── stone4.jpg
+│   └── water1.jpg
+├── tilesets
+│   ├── cave
+│   │   ├── cave.dat
+│   │   ├── cave.entities.png
+│   │   └── cave.tiles.png
+│   ├── dark_world
+│   ├── dungeon_blue
+│   │   ├── dungeon_blue.dat
+│   │   ├── dungeon_blue.entities.png
+│   │   └── dungeon_blue.tiles.png
+│   ├── dungeon_gray
+│   │   ├── dungeon_grayblue.dat
+│   │   ├── dungeon_grayblue.entities.png
+│   │   └── dungeon_grayblue.tiles.png
+│   ├── dungeon_graybrown
+│   │   ├── dungeon_graybrown.dat
+│   │   ├── dungeon_graybrown.entities.png
+│   │   └── dungeon_graybrown.tiles.png
+│   ├── house
+│   │   ├── house.dat
+│   │   ├── house.entities.png
+│   │   └── house.tiles.png
+│   ├── ice_brightblue
+│   │   ├── ice_brightblue.dat
+│   │   ├── ice_brightblue.entities.png
+│   │   └── ice_brightblue.tiles.png
+│   ├── ice_brown
+│   │   ├── ice_brown.dat
+│   │   ├── ice_brown.entities.png
+│   │   └── ice_brown.tiles.png
+│   ├── light_world
+│   │   ├── light_world.dat
+│   │   ├── light_world.entities.png
+│   │   └── light_world.tiles.png
+│   ├── palace_purple
+│   │   ├── palace_purple.dat
+│   │   ├── palace_purple.entities.png
+│   │   └── palace_purple.tiles.png
+│   ├── references
+│   │   ├── anywebp_1786234191528.zip
+│   │   ├── legend-of-zelda-a-link-to-the-past-desert-palace-1f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-desert-palace-2f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-desert-palace-b1f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-eastern-palace-1f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-eastern-palace-2f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-b1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-b2f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-b3f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-hidden-passage-1f-sanctuary-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-hidden-passage-1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-hyrule-castle-hidden-passage-b1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-misery-mire-1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-misery-mire-b1f-a-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-misery-mire-b1f-b-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-misery-mire-b2f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-1f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-2f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-3f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-4f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-5f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-mountain-tower-6f-snes-map.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-swamp-palace-1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-swamp-palace-b1f-a-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-swamp-palace-b1f-b-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-swamp-palace-b2f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-thieves-town-1f-snes-map-thumbnail.png
+│   │   ├── legend-of-zelda-a-link-to-the-past-thieves-town-b1f-snes-map-thumbnail.png
+│   │   └── legend-of-zelda-a-link-to-the-past-thieves-town-b2f-snes-map-thumbnail.png
+│   ├── temple_blue
+│   │   ├── temple_blue.dat
+│   │   ├── temple_blue.entities.png
+│   │   └── temple_blue.tiles.png
+│   ├── temple_green
+│   │   ├── temple_green.dat
+│   │   ├── temple_green.entities.png
+│   │   └── temple_green.tiles.png
+│   └── temple_yellow
+│       ├── temple_yellow.dat
+│       ├── temple_yellow.entities.png
+│       └── temple_yellow.tiles.png
+└── UI
+    ├── BOSSHP (1).png
+    ├── BOSSHP (2).png
+    ├── BOSSHP (3).png
+    ├── BOSSHP (4).png
+    ├── BOSSHP (5).png
+    ├── BOSSHP (6).png
+    ├── BOSSHP (7).png
+    ├── BOSSHP (8).png
+    ├── INVENTORY SCREEN.jpg
+    ├── INVENTORY SCREEN.png
+    ├── PAUSE SCREEN.jpg
+    ├── PAUSE SCREEN.png
+    └── TITLE SCREEN.png
