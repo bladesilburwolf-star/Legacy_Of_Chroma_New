@@ -33,11 +33,18 @@
             unlocked: false
         },
         {
+            id: 'song_of_time',
+            name: 'Song of Time',
+            notes: '→ A ↓ → A ↓',
+            hint: 'Clear the northern fog — industrial age returns.',
+            unlocked: true
+        },
+        {
             id: 'song_of_storms',
             name: 'Song of Storms',
             notes: 'A ↓ ↑ A ↓ ↑',
-            hint: '??? (locked)',
-            unlocked: false
+            hint: 'Fill or drain water by context — reveal fairy fountains, flood gaps.',
+            unlocked: true
         },
         {
             id: 'eponas_song',
@@ -45,6 +52,13 @@
             notes: '↑ ← → ↑ ← →',
             hint: '??? (locked)',
             unlocked: false
+        },
+        {
+            id: 'mudora_song',
+            name: 'Song of Mudora',
+            notes: '↓ ← → ↓ ← →',
+            hint: 'Desert tongues unlock — move the guardian statues.',
+            unlocked: true
         }
     ];
 
@@ -155,9 +169,32 @@
                 return;
             }
 
+            if (id === 'mudora_song') {
+                playToneSequence([293.66, 349.23, 392.00, 293.66, 349.23, 392.00], 0.15);
+                if (options.onMessage) options.onMessage("Song of Mudora — the desert listens…");
+                if (options.onSong) options.onSong(id, { desert: true });
+                return;
+            }
+
+            if (id === 'song_of_time') {
+                playToneSequence([392.00, 329.63, 261.63, 392.00, 329.63, 261.63], 0.18);
+                if (options.onMessage) options.onMessage('Song of Time — the ages shift…');
+                if (options.onSong) options.onSong(id, { industrial: true });
+                return;
+            }
+
+            if (id === 'song_of_storms') {
+                // Storms motif
+                playToneSequence([329.63, 493.88, 392.00, 329.63, 493.88, 392.00], 0.14);
+                if (options.onMessage) options.onMessage('Song of Storms — the skies open…');
+                if (options.onSong) options.onSong(id, { storms: true });
+                return;
+            }
+
             // Locked / future songs — just a soft arpeggio
             playToneSequence([440, 494, 523], 0.15);
-            if (options.onMessage) options.onMessage(SONGS.find(function (s) { return s.id === id; }).name + ' (not yet taught)');
+            const song = SONGS.find(function (s) { return s.id === id; });
+            if (options.onMessage) options.onMessage((song ? song.name : id) + ' (not yet taught)');
             if (options.onSong) options.onSong(id, {});
         }
 

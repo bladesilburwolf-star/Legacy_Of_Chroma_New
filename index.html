@@ -554,14 +554,16 @@
         }
         window._farRoom = farRoom;
         window._dungeonDoors = {
-            d7: { x: 0, z: FAR_N + 90, url: 'd_7.html' },
-            d8: { x: -280, z: FAR_N + 260, url: 'd_8.html' },
+            /* d7 Industrial — Song of Time clears north fog */
+
+            /* d8 Final annex — Chromac / Big Key */
+
             /* d4 Hidden Palace — south, night-only via _hiddenPalace (not generic door) */
             /* d5 Meta's Floating Palace — NE lake, raft-gated via _waterPalace */
             /* d3 Ice Palace — lantern-gated via _icePalace */
 
             d1: { x: -1550, z: -200, url: 'd_1.html' },
-            d6: { x: FAR_E - 100, z: FAR_S * 0.5, url: 'd_6.html' }
+            /* d6 Desert Palace — SW, Mudora Song via _desertPalace */
         };
 
         // ============================================================
@@ -973,6 +975,168 @@
 
         console.log('Bomb Cave D2 @', D2_X, D2_Z);
 
+        // ============================================================
+        // DESERT PALACE (D6) — SW mesas · Song of Mudora
+        // ============================================================
+        const DES_X = -ZONE_W * 0.32;
+        const DES_Z = ZONE_L * 0.32;
+        if (typeof hm !== 'undefined' && hm && hm.flattenCircle) {
+            try { hm.flattenCircle(0.18, 0.78, 0.14, 0.04); } catch (e) {}
+        }
+        const desertGroup = new THREE.Group();
+        desertGroup.name = 'desert_palace_d6';
+        const sand = new THREE.Mesh(
+            new THREE.CylinderGeometry(220, 240, 8, 16),
+            new THREE.MeshStandardMaterial({ color: 0xc2a060, roughness: 1 })
+        );
+        sand.position.set(DES_X, 4, DES_Z);
+        desertGroup.add(sand);
+        const mesaMat = new THREE.MeshStandardMaterial({ color: 0xa08050, roughness: 0.95, flatShading: true });
+        [[-180, -40, 90, 50], [160, 60, 100, 55], [-100, 140, 70, 40]].forEach(function (m) {
+            const mesa = new THREE.Mesh(new THREE.BoxGeometry(m[2], m[3], m[2] * 0.7), mesaMat);
+            mesa.position.set(DES_X + m[0], m[3] * 0.5, DES_Z + m[1]);
+            desertGroup.add(mesa);
+        });
+        const facade = new THREE.Mesh(
+            new THREE.BoxGeometry(140, 80, 50),
+            new THREE.MeshStandardMaterial({ color: 0xb89858, roughness: 0.85 })
+        );
+        facade.position.set(DES_X, 42, DES_Z - 30);
+        desertGroup.add(facade);
+        const desDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(36, 52, 8),
+            new THREE.MeshStandardMaterial({ color: 0x886622, emissive: 0x554400, emissiveIntensity: 0.25 })
+        );
+        desDoor.position.set(DES_X, 30, DES_Z + 5);
+        desertGroup.add(desDoor);
+        const statues = [];
+        function makeStatue(ox, oz) {
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(28, 55, 24),
+                new THREE.MeshStandardMaterial({ color: 0x8a7a5a, roughness: 0.8 })
+            );
+            body.position.set(DES_X + ox, 30, DES_Z + oz);
+            const head = new THREE.Mesh(
+                new THREE.BoxGeometry(22, 18, 22),
+                new THREE.MeshStandardMaterial({ color: 0x9a8a6a })
+            );
+            head.position.set(DES_X + ox, 64, DES_Z + oz);
+            desertGroup.add(body);
+            desertGroup.add(head);
+            statues.push({ body: body, head: head, homeX: DES_X + ox, homeZ: DES_Z + oz, side: ox < 0 ? -1 : 1, moved: false });
+        }
+        makeStatue(-32, 40);
+        makeStatue(32, 40);
+        scene.add(desertGroup);
+        window._desertPalace = {
+            x: DES_X, z: DES_Z, door: desDoor, statues: statues, open: false, group: desertGroup
+        };
+        window.moveMudoraStatues = function () {
+            const dp = window._desertPalace;
+            if (!dp || dp.open) return;
+            dp.open = true;
+            dp.statues.forEach(function (s) {
+                s.moved = true;
+                const tx = s.homeX + s.side * 70;
+                s.body.position.x = tx;
+                s.head.position.x = tx;
+            });
+            if (dp.door && dp.door.material) {
+                dp.door.material.emissiveIntensity = 0.7;
+                dp.door.material.color.setHex(0xccaa44);
+            }
+            statusEl.textContent = 'Song of Mudora — the statues slide aside! Desert Palace is open.';
+        };
+        console.log('Desert Palace D6 @', DES_X, DES_Z);
+
+        // ============================================================
+        // NORTH SECTOR FOG — blocks D7 / D8 until Song of Time
+        // ============================================================
+        const NORTH_FOG_Z = FAR_N + 180; // barrier band south of industrial doors
+        const northFogGroup = new THREE.Group();
+        northFogGroup.name = 'north_time_fog';
+
+        // Thick dark fog volumes (layered planes)
+        for (let i = 0; i < 5; i++) {
+            const fogPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(ZONE_W * 0.55, 220),
+                new THREE.MeshBasicMaterial({
+                    color: 0x0a0a12,
+                    transparent: true,
+                    opacity: 0.55 - i * 0.06,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                })
+            );
+            fogPlane.position.set(0, 60 + i * 8, FAR_N + 120 - i * 25);
+            fogPlane.rotation.x = -0.08;
+            northFogGroup.add(fogPlane);
+        }
+        // Ground murk
+        const murk = new THREE.Mesh(
+            new THREE.PlaneGeometry(ZONE_W * 0.5, 400),
+            new THREE.MeshBasicMaterial({
+                color: 0x050508, transparent: true, opacity: 0.65, depthWrite: false
+            })
+        );
+        murk.rotation.x = -Math.PI / 2;
+        murk.position.set(0, 6, FAR_N + 80);
+        northFogGroup.add(murk);
+
+        // Soft particles
+        const fogCount = 300;
+        const fogGeo = new THREE.BufferGeometry();
+        const fogPos = new Float32Array(fogCount * 3);
+        for (let i = 0; i < fogCount; i++) {
+            fogPos[i * 3] = (Math.random() - 0.5) * ZONE_W * 0.45;
+            fogPos[i * 3 + 1] = 10 + Math.random() * 120;
+            fogPos[i * 3 + 2] = FAR_N + 40 + Math.random() * 200;
+        }
+        fogGeo.setAttribute('position', new THREE.BufferAttribute(fogPos, 3));
+        const fogPts = new THREE.Points(fogGeo, new THREE.PointsMaterial({
+            color: 0x222233, size: 6, transparent: true, opacity: 0.5, depthWrite: false
+        }));
+        northFogGroup.add(fogPts);
+        scene.add(northFogGroup);
+
+        // Industrial "future" accent lights — off until Song of Time
+        const industrialLights = [];
+        [[0, FAR_N + 90], [-280, FAR_N + 260], [70, FAR_N - 30]].forEach(function (c) {
+            const pl = new THREE.PointLight(0xff6622, 0, 200);
+            pl.position.set(c[0], 50, c[1]);
+            scene.add(pl);
+            industrialLights.push(pl);
+        });
+
+        window._northFog = {
+            group: northFogGroup,
+            particles: fogPts,
+            lights: industrialLights,
+            cleared: false,
+            barrierZ: FAR_N + 200, // cannot walk past while fog active
+            d7: { x: 0, z: FAR_N + 90 },
+            d8: { x: -280, z: FAR_N + 260 }
+        };
+
+        window.clearNorthFog = function () {
+            const nf = window._northFog;
+            if (!nf || nf.cleared) return;
+            nf.cleared = true;
+            // Fade out group
+            nf.group.visible = false;
+            nf.lights.forEach(function (l) { l.intensity = 1.2; });
+            // Optional: tint industrial buildings
+            statusEl.textContent = 'Song of Time — the fog tears away. The industrial age stands revealed!';
+            try {
+                const a = new Audio('assets/fanfare/secret.wav');
+                a.volume = 0.5; a.play().catch(function () {});
+            } catch (e) {}
+        };
+
+        console.log('North fog barrier @', FAR_N);
+
+
+
 
         // ============================================================
         // HIDDEN PALACE (D4) — south forest; visible/enterable only at NIGHT
@@ -1156,6 +1320,7 @@
         makeRoadStrip(START_X, START_Z, ZONE_W * 0.42, 0, 44);             // east Lake approach
         makeRoadStrip(START_X, START_Z, 0, ZONE_L * 0.42, 48);             // south forest/beach
         makeRoadStrip(0, ZONE_L * 0.3, 180, ZONE_L * 0.36, 40);           // path to hidden palace
+        makeRoadStrip(START_X, START_Z, -ZONE_W * 0.32, ZONE_L * 0.32, 44); // path to desert palace
         makeRoadStrip(200, 800, ZONE_W * 0.38, ZONE_L * 0.38, 40);         // SE lake
         makeRoadStrip(-200, 800, -ZONE_W * 0.38, ZONE_L * 0.38, 40);       // SW desert
 
@@ -1274,6 +1439,17 @@
                     }));
                 }
                 makeSign('FAIRY\nFOUNTAIN', f.x, f.z + 60, '#ff88cc');
+                // Flood surface (visible while flooded)
+                const flood = new THREE.Mesh(
+                    new THREE.CircleGeometry(36, 16),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x2288cc, transparent: true, opacity: 0.55, roughness: 0.3
+                    })
+                );
+                flood.rotation.x = -Math.PI / 2;
+                flood.position.set(f.x, gy + 10, f.z);
+                scene.add(flood);
+                f.floodMesh = flood;
             });
             const fr = RoomBuilderV3.build(scene, shapes, {
                 layerZ: { L1: -80, L2: -20, L3: 0, L4: 40, UI: 100 }
@@ -1281,10 +1457,111 @@
             if (fr.solidBoxes && room.solidBoxes) {
                 room.solidBoxes = room.solidBoxes.concat(fr.solidBoxes);
             }
+            spots.forEach(function (f) {
+                f.flooded = true; // start underwater / sealed — drain to enter
+                f.healed = false;
+            });
             window._fairyFountains = spots;
+            window._waterState = window._waterState || { level: 'high', toggles: 0 }; // high | low
         })();
 
-        // ---- Gorge hole markers ----
+        
+        // ---- Song of Storms: fill / drain water context ----
+        window._waterState = window._waterState || { level: 'high', toggles: 0 };
+        window._stormGaps = window._stormGaps || [
+            // Gaps that only become crossable when filled (bridge of water) or drained
+            { x: 200, z: 800, mode: 'fill', filled: false, radius: 80 },
+            { x: -900, z: -600, mode: 'fill', filled: false, radius: 70 }
+        ];
+
+        window.applySongOfStorms = function () {
+            const st = window._waterState;
+            st.toggles = (st.toggles || 0) + 1;
+            // Context: near fairy fountain → prefer drain; near lake palace → toggle lake; else global toggle
+            const pos = player && player.position;
+            let context = 'global';
+            if (pos && window._fairyFountains) {
+                for (let i = 0; i < window._fairyFountains.length; i++) {
+                    const f = window._fairyFountains[i];
+                    if (Math.hypot(pos.x - f.x, pos.z - f.z) < 160) {
+                        context = 'fairy';
+                        break;
+                    }
+                }
+            }
+            if (context === 'global' && pos && window._waterPalace &&
+                Math.hypot(pos.x - window._waterPalace.x, pos.z - window._waterPalace.z) < 350) {
+                context = 'lake';
+            }
+            if (context === 'global' && pos && window._stormGaps) {
+                for (let i = 0; i < window._stormGaps.length; i++) {
+                    const g = window._stormGaps[i];
+                    if (Math.hypot(pos.x - g.x, pos.z - g.z) < (g.radius || 80) + 40) {
+                        context = 'gap';
+                        window._stormGapFocus = g;
+                        break;
+                    }
+                }
+            }
+
+            const goHigh = st.level !== 'high'; // toggle
+            if (context === 'fairy') {
+                // Always drain fairies to reveal fountain
+                st.level = 'low';
+                window._fairyFountains.forEach(function (f) {
+                    f.flooded = false;
+                    if (f.floodMesh) f.floodMesh.visible = false;
+                });
+                statusEl.textContent = 'Song of Storms — water drains from the fairy fountains!';
+            } else if (context === 'gap' && window._stormGapFocus) {
+                const g = window._stormGapFocus;
+                g.filled = !g.filled;
+                statusEl.textContent = g.filled
+                    ? 'Song of Storms — the gap floods; a water path forms!'
+                    : 'Song of Storms — the gap drains dry.';
+            } else {
+                st.level = goHigh ? 'high' : 'low';
+                statusEl.textContent = st.level === 'high'
+                    ? 'Song of Storms — waters rise across the land!'
+                    : 'Song of Storms — waters recede…';
+                if (window._fairyFountains) {
+                    window._fairyFountains.forEach(function (f) {
+                        f.flooded = (st.level === 'high');
+                        if (f.floodMesh) f.floodMesh.visible = f.flooded;
+                    });
+                }
+            }
+
+            // Lake visual
+            if (window._lakeWater) {
+                const baseY = (window._waterPalace && window._waterPalace.waterY != null)
+                    ? window._waterPalace.waterY
+                    : ((typeof RoomBuilderV3 !== 'undefined' ? RoomBuilderV3.FLOOR_Y : 0) + 18);
+                const y = st.level === 'high' ? baseY : baseY - 28;
+                if (window._lakeWater.setWaterLevel) window._lakeWater.setWaterLevel(y);
+                else if (window._lakeWater.mesh) window._lakeWater.mesh.position.y = y;
+            }
+
+            // Rain burst
+            if (typeof WeatherSystemV3 !== 'undefined' && !window._stormWeather) {
+                window._stormWeather = WeatherSystemV3.create(scene, {
+                    type: 'rain',
+                    intensity: 0.85
+                });
+                window._stormWeatherTimer = 4.0;
+            } else if (window._stormWeatherTimer != null) {
+                window._stormWeatherTimer = 4.0;
+            }
+
+            // Brief sky darkening via hour nudge optional — skip
+
+            try {
+                const a = new Audio('assets/fanfare/secret.wav');
+                a.volume = 0.4; a.play().catch(function () {});
+            } catch (e) {}
+        };
+
+// ---- Gorge hole markers ----
         (function placeGorgeMarkers() {
             const holes = [
                 { x: 0.62, z: 0.55 },
@@ -1628,6 +1905,23 @@
             onMessage: function (msg) { statusEl.textContent = msg; },
             onSong: function (id, info) {
                 if (id === 'suns_song') console.log("Sun's Song hour", info && info.hour);
+                if (id === 'mudora_song') {
+                    const dp = window._desertPalace;
+                    const pos = player && player.position;
+                    if (dp && pos && Math.hypot(pos.x - dp.x, pos.z - dp.z) < 280) {
+                        if (typeof window.moveMudoraStatues === 'function') window.moveMudoraStatues();
+                    } else {
+                        statusEl.textContent = "Song of Mudora echoes — but the desert is too far…";
+                    }
+                }
+                if (id === 'song_of_time') {
+                    if (typeof window.clearNorthFog === 'function') window.clearNorthFog();
+                    else statusEl.textContent = 'Song of Time… but the north does not answer.';
+                }
+                if (id === 'song_of_storms') {
+                    if (typeof window.applySongOfStorms === 'function') window.applySongOfStorms();
+                    else statusEl.textContent = 'Song of Storms… no water answers.';
+                }
             }
         }) : null;
 
@@ -1992,6 +2286,72 @@
 
 
 
+
+
+            // North Industrial D7 — after Song of Time
+            if (window._northFog &&
+                Math.abs(p.x - window._northFog.d7.x) < 70 &&
+                Math.abs(p.z - window._northFog.d7.z) < 70) {
+                if (!window._northFog.cleared) {
+                    statusEl.textContent = 'Impenetrable dark fog. The Song of Time may clear the ages… (O)';
+                    return;
+                }
+                warpTo('d_7.html');
+                return;
+            }
+            // North Final D8 — Chromac Key or Big Key
+            if (window._northFog &&
+                Math.abs(p.x - window._northFog.d8.x) < 70 &&
+                Math.abs(p.z - window._northFog.d8.z) < 70) {
+                if (!window._northFog.cleared) {
+                    statusEl.textContent = 'Fog swallows the final gate. Play the Song of Time first.';
+                    return;
+                }
+                const hasKey = (inventory.has && (inventory.has('chromackey') || inventory.has('bigkey')));
+                if (!hasKey) {
+                    statusEl.textContent = 'Final annex sealed — need the Chromac Key (or Big Key).';
+                    return;
+                }
+                warpTo('d_8.html');
+                return;
+            }
+
+            // Fairy fountains — enter when drained (Song of Storms)
+            if (window._fairyFountains) {
+                for (let i = 0; i < window._fairyFountains.length; i++) {
+                    const f = window._fairyFountains[i];
+                    if (Math.hypot(p.x - f.x, p.z - f.z) < 55) {
+                        if (f.flooded) {
+                            statusEl.textContent = 'The fountain is submerged. Song of Storms may drain it… (O)';
+                            return;
+                        }
+                        if (!f.healed && typeof hpBars !== 'undefined') {
+                            f.healed = true;
+                            if (hpBars.heal) hpBars.heal(player.mesh, 6);
+                            else if (hpBars.attach) { /* full restore message */ }
+                            statusEl.textContent = 'A fairy restores your strength!';
+                            try {
+                                const a = new Audio('assets/fanfare/itemfanfare.wav');
+                                a.volume = 0.45; a.play().catch(function () {});
+                            } catch (e) {}
+                        } else {
+                            statusEl.textContent = 'The fairy fountain is quiet for now.';
+                        }
+                        return;
+                    }
+                }
+            }
+            // Desert Palace D6 — SW — statues cleared by Song of Mudora
+            if (window._desertPalace &&
+                Math.abs(p.x - window._desertPalace.x) < 90 &&
+                Math.abs(p.z - window._desertPalace.z) < 100) {
+                if (window._desertPalace.open) {
+                    warpTo('d_6.html');
+                    return;
+                }
+                statusEl.textContent = 'Stone guardians bar the Desert Palace. Play the Song of Mudora (O).';
+                return;
+            }
             // Bomb pickups
             if (window._bombs && window._bombs.tryPickup(p.x, p.z, 40)) return;
             // Bomb Cave D2 — east lake — clear boulders with bombs
@@ -2091,6 +2451,15 @@
             }
             const _dt = 1 / 60;
             if (window._lakeWater && window._lakeWater.update) window._lakeWater.update(_dt);
+            if (window._stormWeatherTimer != null && window._stormWeatherTimer > 0) {
+                window._stormWeatherTimer -= _dt;
+                if (window._stormWeather && window._stormWeather.update) {
+                    window._stormWeather.update(_dt, player && player.position, scene.fog);
+                }
+                if (window._stormWeatherTimer <= 0 && window._stormWeather && window._stormWeather.group) {
+                    window._stormWeather.group.visible = false;
+                }
+            }
             if (window._bombs && window._bombs.update) window._bombs.update(_dt);
 
             if (window._iceWeather && window._iceWeather.update) {
@@ -2114,6 +2483,41 @@
                 }
             }
             // Ice collision: block player while frozen
+            
+            // North fog: block walking into industrial belt until cleared
+            if (window._northFog && !window._northFog.cleared && player) {
+                if (player.position.z < window._northFog.barrierZ) {
+                    player.position.z = window._northFog.barrierZ;
+                    // occasional hint
+                    if (Math.random() < 0.01) {
+                        statusEl.textContent = 'A wall of dark fog blocks the north…';
+                    }
+                }
+                // Drift particles
+                if (window._northFog.particles) {
+                    const arr = window._northFog.particles.geometry.attributes.position.array;
+                    for (let i = 0; i < arr.length; i += 3) {
+                        arr[i] += Math.sin(performance.now() * 0.001 + i) * 0.15;
+                        arr[i + 1] += 0.05;
+                        if (arr[i + 1] > 140) arr[i + 1] = 10;
+                    }
+                    window._northFog.particles.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+
+            // Desert statue collision (while closed)
+            if (window._desertPalace && !window._desertPalace.open && player) {
+                window._desertPalace.statues.forEach(function (s) {
+                    const sx = s.body.position.x, sz = s.body.position.z;
+                    const dx = player.position.x - sx, dz = player.position.z - sz;
+                    const dist = Math.hypot(dx, dz);
+                    if (dist < 28 && dist > 0.01) {
+                        const push = (28 - dist) / dist;
+                        player.position.x += dx * push;
+                        player.position.z += dz * push;
+                    }
+                });
+            }
             // D2 boulder collision
             if (window._bombCave && player) {
                 window._bombCave.boulders.forEach(function (b) {
