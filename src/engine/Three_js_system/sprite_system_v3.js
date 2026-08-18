@@ -101,9 +101,12 @@
         const layerZ = (options.layerZ && options.layerZ[layer]) || DEFAULT_LAYER_Z[layer] || 0;
 
         const pos = options.position || { x: 0, y: 0, z: 0 };
+        const baseY = options.worldY
+            ? (pos.y || 0)
+            : ((pos.y || 0) + FLOOR_Y + (h * 0.5));
         mesh.position.set(
             pos.x || 0,
-            (pos.y || 0) + FLOOR_Y + (h * 0.5),
+            baseY,
             (pos.z || 0) + layerZ
         );
 
@@ -228,10 +231,10 @@
             id: 'player',
             name: 'Player',
             textures: {
-                up:    ['assets/player/SWORDUP.png', 'assets/player/SWORDUP-1.png'],
-                down:  ['assets/player/VRMANBACK.png', 'assets/player/VRMANBACK-1.png'],
-                left:  ['assets/player/VRMANL.png', 'assets/player/VRMANL.png'],
-                right: ['assets/player/VRMANR.png', 'assets/player/VRMANR-1.png']
+                up:    ['assets/player/NORTH.png', 'assets/player/VRMANBACK.png', 'assets/player/VRMANBACK-1.png'],
+                down:  ['assets/player/SOUTH.png', 'assets/player/VRMANBACK.png'],
+                left:  ['assets/player/WEST.png', 'assets/player/VRMANL.png'],
+                right: ['assets/player/EAST.png', 'assets/player/VRMANR.png', 'assets/player/VRMANR-1.png']
             },
             width: 45,
             height: 45,

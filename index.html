@@ -557,7 +557,7 @@
             d4: { x: FAR_E + 20, z: 200, url: 'd_4.html' },
             d5: { x: 0, z: FAR_S - 40, url: 'd_5.html' },
             d3: { x: 410, z: -ZONE_L * 0.28 + 20, url: 'd_3.html' },
-            d1: { x: -1550, z: -200, url: 'd_1boss.html' },
+            d1: { x: -1550, z: -200, url: 'd_1.html' },
             d6: { x: FAR_E - 100, z: FAR_S * 0.5, url: 'd_6.html' }
         };
 
@@ -1401,9 +1401,9 @@
                 statusEl.textContent = 'OLD MAN: It is dangerous to go alone! Take this.';
                 return;
             }
-            // Tomb door → D1 boss (full d_1 pending)
+            // Tomb door → D1 (palace layout)
             if (Math.abs(p.x - (-1550)) < 70 && Math.abs(p.z - (-200)) < 80) {
-                warpTo('d_1boss.html'); return;
+                warpTo('d_1.html'); return;
             }
             // Merged land dungeon doors
             if (window._dungeonDoors) {
