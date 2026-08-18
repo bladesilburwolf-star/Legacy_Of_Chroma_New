@@ -85,6 +85,7 @@
         const ATTACK_COOLDOWN  = options.attackCooldown || 0.28;  // seconds before next swing
         const ATTACK_RANGE     = options.attackRange || 46;       // hit-check radius
         const ATTACK_REACH     = options.attackReach || 30;       // how far in front of player the hitbox sits
+        let ATTACK_DAMAGE      = options.attackDamage != null ? options.attackDamage : 1;
         const PLAYER_RADIUS    = options.playerRadius || 20;
         const ENEMY_RADIUS     = options.enemyRadius || 22;
         const INVULN_DURATION  = options.invulnDuration || 0.9;
@@ -105,6 +106,11 @@
             state.attacking = true;
             state.attackTimer = ATTACK_DURATION;
             state.attackCooldown = ATTACK_COOLDOWN;
+            // allow each enemy one hit per swing
+            if (options._enemiesRef) {
+                for (let i = 0; i < options._enemiesRef.length; i++)
+                    options._enemiesRef[i]._hitThisSwing = false;
+            }
         }
 
         function applyDamageToPlayer(fromX, fromZ) {
@@ -133,6 +139,12 @@
             getMaxHealth: function () { return state.maxHealth; },
             isDead: function () { return state.dead; },
             isAttacking: function () { return state.attacking; },
+            setWeaponDamage: function (d) { ATTACK_DAMAGE = Math.max(1, d | 0); },
+            getWeaponDamage: function () { return ATTACK_DAMAGE; },
+            heal: function (n) {
+                state.health = Math.min(state.maxHealth, state.health + (n || 1));
+                if (options.onDamage) options.onDamage(state.health, state.maxHealth);
+            },
 
             /**
              * Call once per frame instead of hand-rolling movement.
@@ -209,6 +221,7 @@
 
                 // ---- Attack trigger (rising edge -- press, not hold) ----
                 if (keys.attack && !state.prevAttackKey && state.attackCooldown <= 0 && !state.attacking) {
+                    if (enemies) for (let hi = 0; hi < enemies.length; hi++) enemies[hi]._hitThisSwing = false;
                     triggerAttack(dir);
                 }
                 state.prevAttackKey = !!keys.attack;
@@ -232,11 +245,24 @@
                             const dx = e.mesh.position.x - hitX;
                             const dz = e.mesh.position.z - hitZ;
                             if (Math.sqrt(dx * dx + dz * dz) <= ATTACK_RANGE) {
-                                if (options.onEnemyHit) options.onEnemyHit(e);
-                                scene.remove(e.mesh);
-                                e.dispose();
-                                enemies.splice(i, 1);
-                                if (options.onKillEnemy) options.onKillEnemy(e);
+                                if (e._hitThisSwing) continue;
+                                e._hitThisSwing = true;
+                                if (e.hp == null) e.hp = e.maxHp != null ? e.maxHp : 1;
+                                e.hp -= ATTACK_DAMAGE;
+                                if (options.onEnemyHit) options.onEnemyHit(e, e.hp, ATTACK_DAMAGE);
+                                // brief flash
+                                if (e.mesh && e.mesh.material) {
+                                    e.mesh.material.opacity = 0.4;
+                                    setTimeout(function () {
+                                        if (e.mesh && e.mesh.material) e.mesh.material.opacity = 1;
+                                    }, 80);
+                                }
+                                if (e.hp <= 0) {
+                                    scene.remove(e.mesh);
+                                    if (e.dispose) e.dispose();
+                                    enemies.splice(i, 1);
+                                    if (options.onKillEnemy) options.onKillEnemy(e);
+                                }
                             }
                         }
                     }

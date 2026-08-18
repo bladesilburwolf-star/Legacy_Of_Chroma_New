@@ -10,10 +10,12 @@
     #hud {
       position: absolute; top: 14px; left: 14px; z-index: 20;
       background: rgba(0,10,0,0.88); border: 2px solid #4a8a4a; padding: 10px 14px;
-      max-width: 380px;
+      max-width: 420px;
     }
     #hud .title { color: #a8ff88; letter-spacing: 0.08em; }
     #hud .sub { font-size: 11px; color: #6a9a6a; margin-top: 4px; }
+    #hearts { margin-top: 6px; letter-spacing: 2px; color: #f66; }
+    #equip { margin-top: 4px; font-size: 11px; color: #cceebb; }
     #status {
       position: absolute; bottom: 12px; left: 14px; z-index: 20;
       font-size: 11px; background: rgba(0,0,0,0.75); padding: 6px 10px; border: 1px solid #3a6a3a;
@@ -23,7 +25,9 @@
 <body>
   <div id="hud">
     <div class="title">TOMB DUNGEON // D1</div>
-    <div class="sub">SFPaint palace · scaled · WASD · ARROWS cam · F interact · ESC field</div>
+    <div class="sub">WASD · ARROWS cam · J attack · F chest/door/jar · 1-3 sword · ESC field · music on first key</div>
+    <div id="hearts">♥♥♥</div>
+    <div id="equip">Weapon: Wood Sword (1 dmg)</div>
   </div>
   <div id="status">Loading map…</div>
 
@@ -32,19 +36,17 @@
   <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
   <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
   <script src="src/engine/Three_js_system/player_state_v3.js"></script>
-  <!-- Prefer external module; inline fallback if 404 -->
   <script src="src/engine/Three_js_system/sfmap_loader_v3.js"></script>
-  <script>
-  /* If external loader 404s, show clear error */
-  if (typeof SFMapLoaderV3 === 'undefined') {
-    console.error('sfmap_loader_v3.js missing — copy to src/engine/Three_js_system/');
-    document.getElementById('status').textContent = 'Missing sfmap_loader_v3.js';
-  }
-  </script>
+  <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
+  <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
+  <script src="src/engine/Three_js_system/audio_system_v3.js"></script>
 
   <script>
   (function () {
     const statusEl = document.getElementById('status');
+    const heartsEl = document.getElementById('hearts');
+    const equipEl = document.getElementById('equip');
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x080c08);
     scene.fog = new THREE.FogExp2(0x080c08, 0.0011);
@@ -56,8 +58,7 @@
     document.body.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0x668866, 0.75));
-    const hemi = new THREE.HemisphereLight(0xaaccff, 0x223322, 0.45);
-    scene.add(hemi);
+    scene.add(new THREE.HemisphereLight(0xaaccff, 0x223322, 0.45));
     const torch = new THREE.PointLight(0xffcc88, 1.2, 520);
     scene.add(torch);
     const fill = new THREE.DirectionalLight(0xffffff, 0.35);
@@ -65,17 +66,72 @@
     scene.add(fill);
 
     const loader = new THREE.TextureLoader();
-    const keys = { w: false, a: false, s: false, d: false };
-    let player, camCtrl, solids = [], exitZone = null;
+    const keys = { w: false, a: false, s: false, d: false, attack: false };
+    let player, camCtrl, combat, inv, room = null;
+    const enemies = [];
+    const interactables = []; // chests, doors, jars, items
+    let exitZone = null;
+    let lastT = performance.now();
 
-    const mapUrls = [
-      'assets/maps/lttp_palace1_legacy.json',
-      'assets/maps/palace1_legacy.json'
-    ];
+    const ENEMY_HP = {
+      SLIME: 1, GREENBLOB: 1, MAGMASLIME: 2,
+      SKULL: 2, ELECSKULL: 3, ELECGHOST: 3,
+      SOLDIER: 3, HARDSOLDIER: 5, DEFAULT: 2
+    };
+
+    function paintHearts(hp, max) {
+      let s = '';
+      for (let i = 0; i < max; i++) s += i < hp ? '♥' : '♡';
+      heartsEl.textContent = s;
+    }
+
+    function paintEquip() {
+      const id = inv && inv.getEquipped ? inv.getEquipped() : 'woodsword';
+      const dmg = InventorySystemV3.weaponDamage
+        ? InventorySystemV3.weaponDamage(id)
+        : 1;
+      const name = (InventorySystemV3.CATALOG[id] || {}).name || id;
+      const keysN = inv.count ? inv.count('smallkey') : 0;
+      equipEl.textContent = 'Weapon: ' + name + ' (' + dmg + ' dmg)  ·  keys: ' + keysN + '  ·  kills: ' + (window._kills || 0);
+      if (combat) combat.setWeaponDamage(dmg);
+    }
+
+    // Audio (optional — fail silent)
+    const sfx = {};
+    function playSfx(name, src) {
+      try {
+        if (!sfx[name]) sfx[name] = new Audio(src);
+        sfx[name].currentTime = 0;
+        sfx[name].volume = 0.45;
+        sfx[name].play().catch(function () {});
+      } catch (e) {}
+    }
+
+    inv = InventorySystemV3.create({
+      starter: ['woodsword'],
+      onEquip: function () { paintEquip(); }
+    });
+    inv.equip('woodsword');
+    window._kills = 0;
+
+    const audio = (typeof AudioSystemV3 !== 'undefined')
+      ? AudioSystemV3.create({ musicVolume: 0.38, sfxVolume: 0.5 })
+      : null;
+    // Dungeon BGM — unlock on first key (browser autoplay policy)
+    let musicStarted = false;
+    function startDungeonMusic() {
+      if (musicStarted || !audio) return;
+      musicStarted = true;
+      audio.playMusic('assets/music/13 Dank Dungeons.mp3');
+    }
 
     function tryLoad(i) {
+      const mapUrls = [
+        'assets/maps/lttp_palace1_legacy.json',
+        'assets/maps/palace1_legacy.json'
+      ];
       if (i >= mapUrls.length) {
-        statusEl.textContent = 'Map load failed — put lttp_palace1_legacy.json in assets/maps/';
+        statusEl.textContent = 'Map load failed';
         return;
       }
       statusEl.textContent = 'Loading ' + mapUrls[i] + '…';
@@ -91,12 +147,25 @@
       });
     }
 
+    function enemyKind(asset) {
+      const a = (asset || '').toLowerCase();
+      if (a.indexOf('magma') >= 0) return 'MAGMASLIME';
+      if (a.indexOf('greenblob') >= 0 || a.indexOf('slime') >= 0) return 'SLIME';
+      if (a.indexOf('elecskull') >= 0) return 'ELECSKULL';
+      if (a.indexOf('elecghost') >= 0 || a.indexOf('ghost') >= 0) return 'ELECGHOST';
+      if (a.indexOf('hard') >= 0 && a.indexOf('soldier') >= 0) return 'HARDSOLDIER';
+      if (a.indexOf('soldier') >= 0) return 'SOLDIER';
+      if (a.indexOf('skull') >= 0) return 'SKULL';
+      return 'DEFAULT';
+    }
+
     function onBuilt(built) {
-      solids = built.solidBoxes || [];
+      room = built.room;
       window._d1Billboards = built.billboards || [];
       const spawn = built.spawn;
       const fy = (typeof RoomBuilderV3 !== 'undefined' ? RoomBuilderV3.FLOOR_Y : 0);
 
+      // Exit pad
       const exitMesh = new THREE.Mesh(
         new THREE.BoxGeometry(50, 8, 50),
         new THREE.MeshBasicMaterial({ color: 0x226622 })
@@ -113,89 +182,353 @@
       scene.add(bossDoor);
       window._bossDoor = bossDoor.position;
 
-      // SpriteSystem adds FLOOR_Y itself — pass local height only
       player = SpriteSystemV3.createPlayer(loader, {
-        position: { x: spawn.x, y: 28, z: spawn.z },
+        position: { x: spawn.x, y: 0, z: spawn.z },
         width: 52, height: 60,
         loader: loader
       });
       scene.add(player.mesh);
+
+      // Promote map ENEMY billboards into combat entities (keep working textures)
+      function wrapBillboardEnemy(mesh, kind, hp) {
+        return {
+          mesh: mesh,
+          material: mesh.material,
+          hp: hp,
+          maxHp: hp,
+          kind: kind,
+          faceCamera: function (cam) {
+            mesh.lookAt(cam.position.x, mesh.position.y, cam.position.z);
+          },
+          update: function () {},
+          dispose: function () {
+            try {
+              mesh.geometry.dispose();
+              if (mesh.material) mesh.material.dispose();
+            } catch (e) {}
+          }
+        };
+      }
+
+      const things = built.things || [];
+      const enemyThings = things.filter(function (t) {
+        return (t.type || '').toUpperCase() === 'ENEMY';
+      });
+
+      // Match billboards to enemy things by cell
+      if (window._d1Billboards && window._d1Billboards.length) {
+        window._d1Billboards.forEach(function (b) {
+          if (!b || !b.userData || !b.userData.thing) return;
+          const th = b.userData.thing;
+          if ((th.type || '').toUpperCase() !== 'ENEMY') return;
+          const kind = enemyKind(th.asset);
+          const hp = ENEMY_HP[kind] || 2;
+          // Snap feet to floor (billboard center was floorY + h/2)
+          // Auto-resize from texture if available
+          let hgt = (b.geometry && b.geometry.parameters && b.geometry.parameters.height) || 40;
+          const mat = b.material;
+          const tex = mat && mat.map;
+          const img = tex && tex.image;
+          if (img && (img.naturalWidth || img.width) && typeof SFMapLoaderV3.autoSpriteSize === 'function') {
+            const iw = img.naturalWidth || img.width;
+            const ih = img.naturalHeight || img.height;
+            const sz = SFMapLoaderV3.autoSpriteSize(kind, 40, iw, ih);
+            b.geometry.dispose();
+            b.geometry = new THREE.PlaneGeometry(sz.w, sz.h);
+            hgt = sz.h;
+          }
+          b.position.y = fy + hgt * 0.5;
+          b.visible = true;
+          enemies.push(wrapBillboardEnemy(b, kind, hp));
+        });
+      }
+
+      // Fallback: spawn SpriteSystem enemies if no billboards matched
+      if (enemies.length === 0) {
+        enemyThings.forEach(function (t) {
+          const kind = enemyKind(t.asset);
+          const hp = ENEMY_HP[kind] || 2;
+          let path = (typeof SFMapLoaderV3.resolveAsset === 'function')
+            ? SFMapLoaderV3.resolveAsset(t.asset)
+            : ('assets/' + t.asset);
+          const wp = built.cellToWorld(Math.floor(t.x), Math.floor(t.y));
+          const spr = SpriteSystemV3.createEnemy(path, loader, {
+            position: { x: wp.x, y: 0, z: wp.z },
+            width: 40, height: 44
+          });
+          spr.hp = hp;
+          spr.maxHp = hp;
+          spr.kind = kind;
+          scene.add(spr.mesh);
+          enemies.push(spr);
+        });
+      }
+
+
+      // Interactables: chests, doors, jars, keys, big items
+      function wrapProp(mesh, type, thing) {
+        return {
+          mesh: mesh,
+          type: type,
+          thing: thing,
+          open: false,
+          solid: type === 'CHESTSM' || type === 'CHESTBG' || type.indexOf('DOOR') >= 0 || type.indexOf('BOULDER') >= 0 || type === 'BOX'
+        };
+      }
+      if (window._d1Billboards) {
+        window._d1Billboards.forEach(function (b) {
+          if (!b || !b.userData || !b.userData.thing) return;
+          const th = b.userData.thing;
+          const type = (th.type || '').toUpperCase();
+          if (['CHESTSM','CHESTBG','SMDOOR','BGDOOR','JAR','BOX','BIGITEM','STAIRSUP','STAIRSDOWN'].indexOf(type) < 0) return;
+          // Resize doors/chests
+          const mat = b.material;
+          const tex = mat && mat.map;
+          const img = tex && tex.image;
+          if (img && typeof SFMapLoaderV3.autoSpriteSize === 'function') {
+            const iw = img.naturalWidth || img.width || 16;
+            const ih = img.naturalHeight || img.height || 16;
+            const sz = SFMapLoaderV3.autoSpriteSize(type, 40, iw, ih);
+            b.geometry.dispose();
+            b.geometry = new THREE.PlaneGeometry(sz.w, sz.h);
+            b.position.y = fy + sz.h * 0.5;
+          } else if (type.indexOf('DOOR') >= 0) {
+            b.geometry.dispose();
+            b.geometry = new THREE.PlaneGeometry(36, 52);
+            b.position.y = fy + 26;
+          } else if (type.indexOf('CHEST') >= 0) {
+            b.geometry.dispose();
+            b.geometry = new THREE.PlaneGeometry(28, 24);
+            b.position.y = fy + 12;
+          }
+          interactables.push(wrapProp(b, type, th));
+        });
+      }
+
+      combat = CombatSystemV3.create(scene, loader, player, {
+        maxHealth: 6,
+        moveSpeed: 3.6,
+        attackDamage: InventorySystemV3.weaponDamage('woodsword'),
+        onDamage: paintHearts,
+        onDeath: function () {
+          statusEl.textContent = 'You died — Esc to field';
+        },
+        onKillEnemy: function (e) {
+          window._kills = (window._kills || 0) + 1;
+          paintEquip();
+          if (audio) audio.sfx('assets/fanfare/secret.wav'); else playSfx('kill', 'assets/fanfare/secret.wav');
+        },
+        onEnemyHit: function () {
+          if (audio) audio.sfx('assets/music/$84-Scratch.wav'); else playSfx('hit', 'assets/music/$84-Scratch.wav');
+        }
+      });
+      paintHearts(combat.getHealth(), combat.getMaxHealth());
+      paintEquip();
 
       camCtrl = CameraControlsV3.create(camera, renderer.domElement, {
         distance: 180, height: 100, minDistance: 90, maxDistance: 360
       });
 
       statusEl.textContent = 'D1 ready · ' + built.w + 'x' + built.h +
-        ' · cell ' + built.cellSize + ' · things ' + (built.things ? built.things.length : 0);
+        ' · enemies ' + enemies.length + ' · J attack';
+      lastT = performance.now();
       animate();
     }
 
     tryLoad(0);
 
     window.addEventListener('keydown', function (e) {
+      startDungeonMusic();
       const k = e.key.toLowerCase();
-      if (k in keys) keys[k] = true;
+      if (k === 'w' || k === 'a' || k === 's' || k === 'd') keys[k] = true;
+      if (k === 'j' || k === 'b' || e.code === 'Space') {
+        keys.attack = true;
+        e.preventDefault();
+      }
+      if (k === '1') { inv.equip('woodsword'); if (audio) audio.sfx('assets/fanfare/itemfanfare.wav'); }
+      if (k === '2') {
+        inv.give('metalsword'); inv.equip('metalsword');
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+      }
+      if (k === '3') {
+        inv.give('plasmasword'); inv.equip('plasmasword');
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+      }
       if (e.code === 'Escape') {
         try {
           if (typeof PlayerStateV3 !== 'undefined') PlayerStateV3.load().setRoom('index.html').save();
         } catch (err) {}
+        if (audio) audio.stopMusic();
         location.href = 'index.html';
       }
       if (k === 'f' || k === 'k') tryInteract();
     });
     window.addEventListener('keyup', function (e) {
       const k = e.key.toLowerCase();
-      if (k in keys) keys[k] = false;
+      if (k === 'w' || k === 'a' || k === 's' || k === 'd') keys[k] = false;
+      if (k === 'j' || k === 'b' || e.code === 'Space') keys.attack = false;
     });
 
-    function blocked(x, z) {
-      const r = 14;
-      for (let i = 0; i < solids.length; i++) {
-        const b = solids[i];
-        if (x + r > b.minX && x - r < b.maxX && z + r > b.minZ && z - r < b.maxZ) return true;
+
+    function nearestInteractable(maxDist) {
+      if (!player) return null;
+      const p = player.mesh.position;
+      let best = null, bestD = maxDist || 55;
+      for (let i = 0; i < interactables.length; i++) {
+        const it = interactables[i];
+        if (!it.mesh || !it.mesh.visible) continue;
+        const d = Math.hypot(p.x - it.mesh.position.x, p.z - it.mesh.position.z);
+        if (d < bestD) { bestD = d; best = it; }
       }
-      return false;
+      return best;
+    }
+
+    function openChest(it) {
+      if (it.open) {
+        statusEl.textContent = 'Already empty…';
+        return;
+      }
+      it.open = true;
+      // Swap to open sprite when available
+      const isBig = it.type === 'CHESTBG';
+      const openPath = isBig
+        ? 'assets/chests/BIGCHESTOPEN.png'
+        : 'assets/chests/SMALLCHESTOPEN.png';
+      const fallbackClosed = isBig
+        ? 'assets/storage/bigchestclosed.png'
+        : 'assets/storage/smallchestclosed.png';
+      const loader2 = new THREE.TextureLoader();
+      loader2.load(openPath, function (tex) {
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestFilter;
+        it.mesh.material.map = tex;
+        it.mesh.material.needsUpdate = true;
+      }, undefined, function () {
+        // tint closed chest darker if no open art
+        it.mesh.material.color.setHex(0x888888);
+      });
+      // Loot
+      if (isBig) {
+        inv.give('metalsword');
+        inv.equip('metalsword');
+        statusEl.textContent = 'Got Metal Sword!';
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+      } else {
+        inv.give('smallkey');
+        statusEl.textContent = 'Got a Small Key! (keys: ' + (inv.count ? inv.count('smallkey') : '?') + ')';
+        if (audio) audio.sfx('assets/fanfare/smchestepen.wav');
+      }
+      paintEquip();
+    }
+
+    function tryDoor(it) {
+      if (it.open) return;
+      const needBoss = it.type === 'BGDOOR';
+      const keyId = needBoss ? 'bigkey' : 'smallkey';
+      const has = inv.has ? inv.has(keyId) : (inv.count && inv.count(keyId) > 0);
+      // also allow chromackey as boss
+      const hasBoss = (inv.has && (inv.has('bigkey') || inv.has('chromackey'))) ||
+        (inv.count && (inv.count('bigkey') > 0 || inv.count('chromackey') > 0));
+      if (needBoss && !hasBoss) {
+        statusEl.textContent = 'Boss door — need a Big Key!';
+        if (audio) audio.sfx('assets/music/$84-Scratch.wav');
+        return;
+      }
+      if (!needBoss && !has) {
+        statusEl.textContent = 'Locked — need a Small Key!';
+        if (audio) audio.sfx('assets/music/$84-Scratch.wav');
+        return;
+      }
+      // Consume small key only for SMDOOR
+      if (!needBoss && inv.take) inv.take('smallkey', 1);
+      else if (!needBoss && inv.useKey) inv.useKey('smallkey');
+      it.open = true;
+      it.mesh.visible = false;
+      statusEl.textContent = needBoss ? 'Boss door opened!' : 'Door unlocked!';
+      if (audio) audio.sfx('assets/fanfare/secret.wav');
+    }
+
+    function breakJar(it) {
+      it.mesh.visible = false;
+      it.open = true;
+      // 40% heart, 30% nothing visual, 30% already implied
+      if (Math.random() < 0.35 && combat) {
+        combat.heal(1);
+        statusEl.textContent = 'Heart!';
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+        paintHearts(combat.getHealth(), combat.getMaxHealth());
+      } else {
+        statusEl.textContent = 'Jar broke…';
+      }
     }
 
     function tryInteract() {
       if (!player) return;
       const p = player.mesh.position;
       if (exitZone && Math.hypot(p.x - exitZone.x, p.z - exitZone.z) < 60) {
+        if (audio) audio.stopMusic();
         location.href = 'index.html';
         return;
       }
       if (window._bossDoor && Math.hypot(p.x - window._bossDoor.x, p.z - window._bossDoor.z) < 55) {
+        if (audio) audio.stopMusic();
         location.href = 'd_1boss.html';
+        return;
+      }
+      const it = nearestInteractable(55);
+      if (!it) {
+        statusEl.textContent = 'Nothing to use nearby';
+        return;
+      }
+      const type = it.type;
+      if (type === 'CHESTSM' || type === 'CHESTBG') openChest(it);
+      else if (type === 'SMDOOR' || type === 'BGDOOR') tryDoor(it);
+      else if (type === 'JAR') breakJar(it);
+      else if (type === 'BIGITEM') {
+        it.mesh.visible = false;
+        it.open = true;
+        inv.give('chromackey');
+        statusEl.textContent = 'Found the Triforce piece / Chromac Key!';
+        if (audio) audio.sfx('assets/fanfare/itemfanfare.wav');
+      }
+      else if (type.indexOf('STAIR') >= 0) {
+        statusEl.textContent = 'Stairs (multi-floor soon)';
       }
     }
 
+
     function animate() {
       requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastT) / 1000);
+      lastT = now;
+
       if (!player || !camCtrl) {
         renderer.render(scene, camera);
         return;
       }
-      const pos = player.mesh.position;
-      let nx = pos.x, nz = pos.z, moving = false, dir = 'down';
-      const sp = 3.6;
-      if (keys.w) { nz -= sp; dir = 'up'; moving = true; }
-      if (keys.s) { nz += sp; dir = 'down'; moving = true; }
-      if (keys.a) { nx -= sp; if (!moving) dir = 'left'; moving = true; }
-      if (keys.d) { nx += sp; if (!moving) dir = 'right'; moving = true; }
-      if (!blocked(nx, pos.z)) pos.x = nx;
-      if (!blocked(pos.x, nz)) pos.z = nz;
-      if (player.setDirection) player.setDirection(dir);
-      if (player.setMoving) player.setMoving(moving);
-      if (player.update) player.update();
+
+      if (combat) {
+        const yaw = (camCtrl.state && camCtrl.state.yaw) || 0;
+        combat.update(dt, keys, room, enemies, yaw);
+      }
+
+      if (player.update) player.update(dt);
       if (player.faceCamera) player.faceCamera(camera);
-      torch.position.set(pos.x, pos.y + 40, pos.z);
-      camCtrl.update(pos);
+      enemies.forEach(function (e) {
+        if (e.faceCamera) e.faceCamera(camera);
+        if (e.update) e.update(dt);
+      });
       if (window._d1Billboards) {
         for (let i = 0; i < window._d1Billboards.length; i++) {
           const b = window._d1Billboards[i];
-          if (b) b.lookAt(camera.position.x, b.position.y, camera.position.z);
+          if (b && b.visible) b.lookAt(camera.position.x, b.position.y, camera.position.z);
         }
       }
+
+      const pos = player.mesh.position;
+      torch.position.set(pos.x, pos.y + 40, pos.z);
+      camCtrl.update(pos);
       renderer.render(scene, camera);
     }
 

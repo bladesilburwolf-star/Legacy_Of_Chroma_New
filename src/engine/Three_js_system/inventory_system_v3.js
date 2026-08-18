@@ -24,12 +24,12 @@
  */
 (function (global) {
     const CATALOG = {
-        woodsword:  { name: 'Wood Sword',  icon: 'assets/inventory/WOODSWORD-1.png',  slot: 'weapon' },
-        metalsword: { name: 'Metal Sword', icon: 'assets/inventory/METALSWORD-1.png', slot: 'weapon' },
-        plasmasword:{ name: 'Plasma Sword',icon: 'assets/inventory/PLASMASWORD.png',  slot: 'weapon' },
+        woodsword:  { name: 'Wood Sword',  icon: 'assets/inventory/WOODSWORD-1.png',  slot: 'weapon', damage: 1 },
+        metalsword: { name: 'Metal Sword', icon: 'assets/inventory/METALSWORD.png', slot: 'weapon' },
+        plasmasword:{ name: 'Plasma Sword',icon: 'assets/inventory/PLASMASWORD.png',  slot: 'weapon', damage: 3 },
         lantern:    { name: 'Lantern',     icon: 'assets/inventory/LANTERN-1.png',    slot: 'tool', usable: true },
         musicnote:  { name: 'Ocarina',     icon: 'assets/inventory/MUSICNOTE-1.png',  slot: 'tool', usable: true },
-        bow:        { name: 'Bow',         icon: 'assets/inventory/BOW UP.png',       slot: 'weapon' },
+        bow:        { name: 'Bow',         icon: 'assets/inventory/BOW UP.png',       slot: 'weapon', damage: 1 },
         bombs:      { name: 'Bombs',       icon: 'assets/inventory/BOMBS.png',        slot: 'tool', usable: true, stack: true },
         smallkey:   { name: 'Small Key',   icon: 'assets/inventory/SMALL KEY.png',    slot: 'key', stack: true },
         bigkey:     { name: 'Big Key',     icon: 'assets/inventory/BIG KEY.png',      slot: 'key' },
@@ -217,8 +217,14 @@
         return api;
     }
 
+    function weaponDamage(id) {
+        const c = CATALOG[id];
+        return (c && c.damage) || (id ? 1 : 0);
+    }
+
     global.InventorySystemV3 = {
         create: create,
-        CATALOG: CATALOG
+        CATALOG: CATALOG,
+        weaponDamage: weaponDamage
     };
 })(typeof window !== 'undefined' ? window : this);

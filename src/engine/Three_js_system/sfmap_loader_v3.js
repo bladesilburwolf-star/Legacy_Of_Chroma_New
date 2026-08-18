@@ -12,9 +12,11 @@
         'enemy/elecghost.png': 'assets/enemies/GHOSTHARDL.png',
         'enemy/soldier.png': 'assets/enemies/SOLDIERL-1.png',
         'enemy/hardsoldier.png': 'assets/enemies/SOLDIERHARDL.png',
-        'storage/smallchestclosed.png': 'assets/chests/SMALLCHEST-1.png',
-        'storage/bigchestclosed.png': 'assets/chests/BIGCHEST-1.png',
-        'storage/bigchestclosed_DISP.png': 'assets/chests/BIGCHEST-1.png',
+        'storage/smallchestclosed.png': 'assets/storage/smallchestclosed.png',
+        'storage/smallchestopen.png': 'assets/chests/SMALLCHESTOPEN.png',
+        'storage/bigchestopen.png': 'assets/chests/BIGCHESTOPEN.png',
+        'storage/bigchestclosed.png': 'assets/storage/bigchestclosed.png',
+        'storage/bigchestclosed_DISP.png': 'assets/storage/bigchestclosed.png',
         'obstacles/jar1.png': 'assets/obstacles/jar1.png',
         'obstacles/jar2.png': 'assets/obstacles/jar2.png',
         'obstacles/box2.png': 'assets/obstacles/box2.png',
@@ -24,8 +26,34 @@
         'items/trpiece.png': 'assets/items/trpiece.png',
         'doors/ladder_down.png': 'assets/doors/ladder_down.png',
         'doors/bosslock.png': 'assets/doors/bosslock.png',
-        'doors/doorlock.png': 'assets/textures/metal2.jpg'
+        'doors/doorlock.png': 'assets/doors/doorlock.png'
     };
+
+
+    /** Scale billboard from texture pixels + entity type (auto-resize) */
+    function autoSpriteSize(type, cellSize, imgW, imgH) {
+        type = (type || '').toUpperCase();
+        const base = cellSize || 40;
+        let targetH = base * 0.7;
+        if (type === 'ENEMY' || type === 'BOSS') targetH = base * 0.85;
+        if (type.indexOf('CHEST') >= 0) targetH = base * 0.55;
+        if (type === 'JAR') targetH = base * 0.38;
+        if (type.indexOf('BOULDER') >= 0) targetH = base * 0.55;
+        if (type.indexOf('DOOR') >= 0) targetH = base * 1.15;
+        if (type.indexOf('STAIR') >= 0) targetH = base * 0.85;
+        if (type === 'BIGITEM') targetH = base * 0.5;
+        if (type === 'BOSS') targetH = base * 1.2;
+        // Fit texture aspect
+        let w = targetH, h = targetH;
+        if (imgW > 0 && imgH > 0) {
+            const aspect = imgW / imgH;
+            h = targetH;
+            w = targetH * aspect;
+            // cap width so fat sprites don't dominate
+            if (w > base * 1.1) { w = base * 1.1; h = w / aspect; }
+        }
+        return { w: w, h: h };
+    }
 
     function resolveAsset(path) {
         if (!path) return null;
@@ -36,6 +64,8 @@
         // Aliases only as secondary (used on texture error in applyMap)
         return primary;
     }
+
+
 
     function resolveAssetWithFallback(path) {
         const primary = resolveAsset(path);
@@ -248,6 +278,7 @@
                         tex.magFilter = THREE.NearestFilter;
                         tex.minFilter = THREE.NearestFilter;
                         mat.needsUpdate = true;
+                        resizeFromTex(tex);
                     }, undefined, function () {
                         if (pathFb && pathFb !== path) {
                             mat.map = loader.load(pathFb, function (tex) {
@@ -269,8 +300,24 @@
                 mesh.position.set(wp.x, floorY + h * 0.5, wp.z);
                 mesh.userData.thing = t;
                 mesh.userData.isBillboard = true;
+                mesh.userData.baseW = w;
+                mesh.userData.baseH = h;
                 scene.add(mesh);
                 billboards.push(mesh);
+
+                // Auto-resize when texture finishes loading
+                function resizeFromTex(tex) {
+                    if (!tex || !tex.image) return;
+                    const iw = tex.image.naturalWidth || tex.image.width || 0;
+                    const ih = tex.image.naturalHeight || tex.image.height || 0;
+                    if (iw < 1 || ih < 1) return;
+                    const sz = autoSpriteSize(type, cellSize, iw, ih);
+                    mesh.geometry.dispose();
+                    mesh.geometry = new THREE.PlaneGeometry(sz.w, sz.h);
+                    mesh.position.y = floorY + sz.h * 0.5;
+                    mesh.userData.baseW = sz.w;
+                    mesh.userData.baseH = sz.h;
+                }
                 placed.push(mesh);
             });
 
@@ -292,5 +339,5 @@
         });
     }
 
-    global.SFMapLoaderV3 = { load: load, resolveAsset: resolveAsset, ASSET_ALIASES: ASSET_ALIASES };
+    global.SFMapLoaderV3 = { load: load, resolveAsset: resolveAsset, autoSpriteSize: autoSpriteSize, ASSET_ALIASES: ASSET_ALIASES };
 })(typeof window !== 'undefined' ? window : this);
