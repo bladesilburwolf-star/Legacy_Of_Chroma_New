@@ -1,191 +1,408 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neondromeda - DUNGEON 5 // SUNKEN ABYSS SHRINE</title>
-    <link rel="stylesheet" href="ui_styles.css">
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #00050a;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        #webgl-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        #sector-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #00e1ff;
-            text-shadow: 0 0 8px #0088ff;
-            pointer-events: none;
-            z-index: 100;
-        }
-        #sector-overlay h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-        }
-        #nav-hud {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-        #nav-hud a {
-            color: #00e1ff;
-            text-decoration: none;
-            background: rgba(0,0,0,0.85);
-            padding: 8px 16px;
-            border: 1px solid #00e1ff;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        #nav-hud a:hover {
-            background: #00e1ff;
-            color: #000;
-        }
-    </style>
-
-    <!-- Three.js Dependency -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <!-- Engine System Dependencies -->
-    <script src="src/engine/Three_js_system/chroma_engine.js"></script>
-    <script src="src/engine/Three_js_system/camera_controls_v3.js"></script>
-    <script src="src/engine/Three_js_system/clock_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/room_builder_v3.js"></script>
-    <script src="src/engine/Three_js_system/collision_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/combat_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/sprite_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/hp_bar_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/inventory_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/interact_system_v3.js"></script>
-    <script src="src/engine/Three_js_system/scoreboard_v3.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Legacy of Chroma - Ice Palace Dungeon 5</title>
+<style>
+  html,body{margin:0;height:100%;background:#0a1628;overflow:hidden;font-family:'Courier New',monospace;color:#cfe8ff}
+  #game{width:100%;height:100%;display:block}
+  #hud{position:absolute;inset:0;pointer-events:none}
+  #topBar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:10px 16px;background:linear-gradient(180deg,rgba(6,22,48,0.95),rgba(6,22,48,0.2));border-bottom:1px solid rgba(125,211,255,0.25)}
+  #title{font-weight:800;letter-spacing:0.12em;font-size:14px;color:#e6f6ff;text-shadow:0 0 12px rgba(125,211,255,0.8)}
+  #sub{font-size:11px;opacity:0.8;margin-top:2px;letter-spacing:0.06em}
+  #hearts{display:flex;gap:4px;align-items:center}
+  .heart{width:18px;height:18px;background:#ff3b5c;clip-path:path("M 9 15 C 2 10 0 6 4 3 C 6 1 9 3 9 3 C 9 3 12 1 14 3 C 18 6 16 10 9 15 Z");box-shadow:0 0 8px #ff3b5c}
+  .heart.empty{background:rgba(255,255,255,0.15);box-shadow:none}
+  #bottom{position:absolute;bottom:0;left:0;right:0;padding:10px 16px;display:flex;justify-content:space-between;align-items:end;background:linear-gradient(0deg,rgba(6,22,48,0.95),rgba(6,22,48,0));border-top:1px solid rgba(125,211,255,0.18)}
+  #equip{display:flex;gap:8px;align-items:center}
+  #equipBox{width:40px;height:40px;border:1px solid rgba(125,211,255,0.5);background:rgba(20,40,70,0.8);display:grid;place-items:center;image-rendering:pixelated}
+  #equipBox img{width:32px;height:32px;object-fit:contain}
+  #controls{font-size:10px;line-height:1.4;opacity:0.75;letter-spacing:0.04em}
+  #status{font-size:11px;opacity:0.9;min-height:18px}
+  #status b{color:#7dd3ff}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
 </head>
 <body>
-
-    <div id="sector-overlay">
-        <h1>DUNGEON 5 // SUNKEN ABYSS SHRINE</h1>
-        <p>LOCATION: LAKE SUB-LEVEL</p>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="topBar">
+    <div>
+      <div id="title">DUNGEON 5 // ICE PALACE</div>
+      <div id="sub">[WASD] MOVE [J/B/SPACE] ATTACK [F/E] INTERACT [1/2/3] EQUIP [I] INV [ESC] INDEX</div>
     </div>
-
-    <div id="nav-hud">
-        <a href="lake_sector.html">← LAKE SECTOR [ESC]</a>
+    <div id="hearts"></div>
+  </div>
+  <div id="bottom">
+    <div>
+      <div id="equip">
+        <div id="equipBox"><img id="equipImg" src="assets/inventory/WOODSWORD-1.png" /></div>
+        <div>
+          <div id="equipName" style="font-size:12px;font-weight:700">WOODSWORD-1</div>
+          <div id="status">loading map...</div>
+        </div>
+      </div>
     </div>
+    <div id="controls">X:0 Y:0 LANE:0 GROUNDED:1 HP:6<br/>[A/D] MOVE [W/S] AIM [SPACE] JUMP [J/B/K] THRUST</div>
+  </div>
+</div>
 
-    <canvas id="webgl-canvas"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { RoomBuilderV3 } from './src/engine/Three_js_system/room_builder_v3.js';
+import { SpriteSystemV3 } from './src/engine/Three_js_system/sprite_system_v3.js';
+import { CameraControlsV3 } from './src/engine/Three_js_system/camera_controls_v3.js';
+import { PlayerStateV3 } from './src/engine/Three_js_system/player_state_v3.js';
+import { SFMapLoaderV3 } from './src/engine/Three_js_system/sfmap_loader_v3.js';
+import { CombatSystemV3 } from './src/engine/Three_js_system/combat_system_v3.js';
+import { InventorySystemV3 } from './src/engine/Three_js_system/inventory_system_v3.js';
+import { AudioSystemV3 } from './src/engine/Three_js_system/audio_system_v3.js';
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('webgl-canvas');
+// CRITICAL: Use existing V3 systems exactly like d_1.html - NO NEW APIS
+const canvas = document.getElementById('game');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1e38);
+scene.fog = new THREE.Fog(0x0d1e38, 180, 420);
 
-            // 1. Engine Setup (Aquatic Bioluminescent Theme)
-            const engine = new ChromaEngine({
-                canvas: canvas,
-                clearColor: 0x000814,
-                fogColor: 0x001d3d,
-                fogDensity: 0.02
-            });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
 
-            // 2. Camera Controls
-            const cameraController = new CameraControlsV3(engine.camera, engine.renderer.domElement, {
-                moveSpeed: 8.0,
-                lookSpeed: 0.002,
-                heightOffset: 1.8
-            });
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
+const loader = new THREE.TextureLoader();
 
-            // 3. Bioluminescent Underwater Lighting
-            const ambientLight = new THREE.AmbientLight(0x0077b6, 0.4);
-            engine.scene.add(ambientLight);
+// FLOOR_Y RULE from SpriteSystemV3 - NEVER pass worldY unless worldY:true
+// y_world = localY + FLOOR_Y + height/2
+const FLOOR_Y = RoomBuilderV3.FLOOR_Y; // use constant, do not hardcode
 
-            const crystalGlow = new THREE.PointLight(0x00f5d4, 2.0, 40);
-            crystalGlow.position.set(0, 6, 0);
-            engine.scene.add(crystalGlow);
+// Room builder - ICE PALACE tileset - case sensitive real path
+const roomBuilder = new RoomBuilderV3(scene, {
+  cellSize: 40,
+  wallHeight: 80,
+  floorY: FLOOR_Y,
+  wallTexture: 'assets/tilesets/ice_brown/ice_brown.tiles.png',
+  floorTexture: 'assets/tilesets/ice_brown/ice_brown.tiles.png',
+  // fallback if ice_brown missing -> palace_purple
+  fallbackWall: 'assets/tilesets/palace_purple/palace_purple.tiles.png',
+  fallbackFloor: 'assets/tilesets/palace_purple/palace_purple.tiles.png'
+});
 
-            // 4. Chamber Construction (Using Stone & Moss Textures)
-            const textureLoader = new THREE.TextureLoader();
-            const wallTexture  = textureLoader.load('assets/textures/stone1.jpg');
-            const floorTexture = textureLoader.load('assets/textures/stone4.jpg');
+const spriteSystem = SpriteSystemV3;
+const playerState = PlayerStateV3.create({ maxHP: 6 });
+const inventory = InventorySystemV3.create({ starter: ['woodsword'] });
+const audio = AudioSystemV3.create({ musicVolume: 0.38, sfxVolume: 0.5 });
+const camControls = CameraControlsV3.create(camera, { orbitSpeed: 0.02 });
 
-            wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-            wallTexture.repeat.set(4, 2);
+// Player - use REAL uppercase paths from assets/player/
+// y:0 is localY, system adds FLOOR_Y + h/2 internally
+const player = spriteSystem.createPlayer(scene, {
+  position: { x: 80, y: 0, z: 80 }, // y is local, NOT world
+  texture: 'assets/player/EAST.png',
+  animations: {
+    idle: ['assets/player/EAST.png'],
+    north: ['assets/player/NORTH.png'],
+    south: ['assets/player/SOUTH.png'],
+    west: ['assets/player/WEST.png'],
+    east: ['assets/player/EAST.png'],
+    sword: ['assets/player/SWORDDOWN-1.png','assets/player/SWORDDOWN-2.png']
+  }
+});
 
-            floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(8, 8);
+let combat = null;
+let room = null;
+let billboards = [];
+let kills = 0;
 
-            const roomBuilder = new RoomBuilderV3(engine.scene);
-            roomBuilder.buildDungeonChamber({
-                width: 64,
-                depth: 64,
-                height: 9,
-                wallMaterial: new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5, metalness: 0.2 }),
-                floorMaterial: new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.6 })
-            });
+// ENEMY HP by resolved uppercase asset name - matches real files
+const ENEMY_HP = {
+  'SLIME': 1, 'SLIME-1': 1, 'SLIME-1-0': 1, 'SLIME-2': 1,
+  'LEAFY': 1, 'LEAFY-1-0': 1, 'GREENBLOB': 1,
+  'SKULL': 2, 'NEONSKULL': 2, 'NEONSKULL-1': 2,
+  'ELECSKULL': 3, 'ELECGHOST': 3, 'NEONIBDOWN': 3,
+  'SOLDIER': 3, 'SOLDIERL-1': 3, 'SOLDIERR-1': 3,
+  'HARDSOLDIER': 5, 'KNIGHTHARD': 5, 'KNIGHTHARDR': 5, 'KNIGHTHARDUP': 5, 'SLIMEHARD': 4,
+  'NIB': 2, 'NEONIB': 2
+};
 
-            // 5. Entities & Combat Setup
-            const collisionSystem = new CollisionSystemV3();
-            const combatSystem    = new CombatSystemV3(engine.scene);
-            const spriteSystem    = new SpriteSystemV3(engine.scene);
-            const hpBarSystem     = new HpBarSystemV3(engine.scene);
+function getEnemyHP(assetPath){
+  // assetPath already resolved via SFMapLoaderV3.ASSET_ALIASES to real uppercase path
+  // e.g. "assets/enemies/SLIME-1-0.png"
+  const upper = assetPath.toUpperCase();
+  for(const key in ENEMY_HP){
+    if(upper.includes(key)) return ENEMY_HP[key];
+  }
+  return 2;
+}
 
-            // Submerged Boss Key / Item Pickup
-            const itemSprite = spriteSystem.createSprite('assets/inventory/ICICLE-1.png', {
-                position: new THREE.Vector3(0, 1.2, -18),
-                scale: new THREE.Vector3(2.0, 2.0, 1)
-            });
+// Interactables - same functions as d_1.html but correct open art paths
+function openChest(mesh, type){
+  if(mesh.userData.opened) return;
+  mesh.userData.opened = true;
+  const isBig = type.includes('BG');
+  const openTex = isBig ? 'assets/chests/BIGCHESTOPEN.png' : 'assets/chests/SMALLCHESTOPEN.png';
+  const fallbackOpen = isBig ? 'assets/storage/bigchestclosed.png' : 'assets/storage/smallchestclosed.png';
+  // try real open art, fallback to storage
+  loader.load(openTex, (tex)=>{
+    mesh.material.map = tex;
+    mesh.material.needsUpdate = true;
+  }, null, ()=>{
+    loader.load(fallbackOpen, (tex)=>{
+      // still closed texture but mark opened - no pink box fallback
+      mesh.material.map = tex;
+      mesh.material.needsUpdate = true;
+    });
+  });
+  const reward = isBig ? 'bigkey' : 'smallkey';
+  inventory.give(reward, 1);
+  audio.playSFX('assets/sfx/chest_open.mp3');
+  setStatus(`opened ${isBig?'BIG':'SMALL'} chest +1 ${reward.toUpperCase()}`);
+}
 
-            // D5 Aquatic / Ghost Enemies
-            const d5Enemies = ['assets/enemies/GHOSTHARDL.png', 'assets/enemies/CYPAKL.png'];
-            for (let i = 0; i < 10; i++) {
-                const x = (Math.random() - 0.5) * 44;
-                const z = (Math.random() - 0.5) * 44;
+function tryDoor(mesh, type){
+  const need = type.includes('BG') ? 'bigkey' : 'smallkey';
+  if(inventory.has(need)){
+    inventory.take(need, 1);
+    scene.remove(mesh);
+    audio.playSFX('assets/sfx/door_open.mp3');
+    setStatus(`used ${need} - door opened`);
+  } else {
+    setStatus(`needs ${need.toUpperCase()} - ${inventory.count(need)} owned`);
+    audio.playSFX('assets/sfx/door_locked.mp3');
+  }
+}
 
-                const enemySprite = d5Enemies[Math.floor(Math.random() * d5Enemies.length)];
-                const enemy = spriteSystem.createEnemySprite(enemySprite, {
-                    position: new THREE.Vector3(x, 1.5, z),
-                    hp: 75,
-                    scale: new THREE.Vector3(2.5, 2.5, 1)
-                });
-                hpBarSystem.attachHpBar(enemy, 75);
-                combatSystem.registerEntity(enemy);
-            }
+function breakJar(mesh){
+  if(mesh.userData.broken) return;
+  mesh.userData.broken = true;
+  scene.remove(mesh);
+  if(Math.random()<0.35){
+    inventory.give('smallkey', 1);
+    setStatus('jar broke - found SMALL KEY');
+  } else {
+    setStatus('jar broke');
+  }
+  audio.playSFX('assets/sfx/jar_break.mp3');
+}
 
-            // 6. Loop
-            const clock = new ClockSystemV3();
+// MAP LOAD - use SFMapLoaderV3.load exactly like d_1
+// with ASSET_ALIASES resolve, not hardcoded lowercase
+const mapCandidates = [
+  'assets/maps/palace5_legacy.json',
+  'assets/maps/palace4_legacy.json',
+  'assets/maps/lttp_palace1_legacy.json'
+];
 
-            function animate() {
-                requestAnimationFrame(animate);
+async function tryLoadMaps(list){
+  for(const url of list){
+    try{
+      setStatus(`loading map ${url}...`);
+      const built = await SFMapLoaderV3.load(scene, roomBuilder, url, {
+        cellSize: 40,
+        wallHeight: 80,
+        floorY: FLOOR_Y,
+        wallTexture: 'assets/tilesets/ice_brown/ice_brown.tiles.png',
+        floorTexture: 'assets/tilesets/ice_brown/ice_brown.tiles.png',
+        // resolveAsset uses ASSET_ALIASES:
+        // "enemy/slime.png" -> "assets/enemies/SLIME-1-0.png"
+        // "items/skey.png" -> "assets/inventory/SMALL KEY.png"
+        // "storage/smallchestclosed.png" -> "assets/storage/smallchestclosed.png"
+        // "obstacles/doorlock.png" -> "assets/doors/doorlock.png"
+        useAliases: true
+      });
+      return built;
+    }catch(e){
+      console.warn('map failed', url, e);
+    }
+  }
+  throw new Error('no map loaded');
+}
 
-                const delta = clock.getDelta();
-                const time  = clock.getElapsedTime();
+function setStatus(t){ document.getElementById('status').innerHTML = t; }
 
-                // Gentle pulsing blue/cyan aura
-                crystalGlow.intensity = 2.0 + Math.sin(time * 3) * 0.4;
+function paintHearts(){
+  const hp = playerState.hp;
+  const max = playerState.maxHP;
+  const c = document.getElementById('hearts');
+  c.innerHTML = '';
+  for(let i=0;i<max;i++){
+    const d = document.createElement('div');
+    d.className = 'heart' + (i<hp ? '' : ' empty');
+    c.appendChild(d);
+  }
+}
 
-                cameraController.update(delta);
-                combatSystem.update(delta);
-                spriteSystem.update(engine.camera);
-                hpBarSystem.update(engine.camera);
+function paintEquip(){
+  const eq = inventory.equipped();
+  const img = document.getElementById('equipImg');
+  const name = document.getElementById('equipName');
+  if(eq){
+    // CATALOG ids -> real uppercase paths
+    const texMap = {
+      woodsword: 'assets/inventory/WOODSWORD-1.png',
+      metalsword: 'assets/inventory/METALSWORD.png',
+      plasmasword: 'assets/inventory/PLASMASWORD.png',
+      smallkey: 'assets/inventory/SMALL KEY.png',
+      bigkey: 'assets/inventory/BIG KEY.png',
+      chromackey: 'assets/inventory/CHROMAC KEY.png',
+      bow: 'assets/inventory/BOW DOWN.png',
+      arrow: 'assets/inventory/ARROW DOWN.png'
+    };
+    img.src = texMap[eq.id] || texMap.woodsword;
+    name.textContent = (eq.id||'').toUpperCase() + (eq.count>1 ? ' x'+eq.count : '');
+    if(combat) combat.setWeaponDamage(InventorySystemV3.weaponDamage(eq.id));
+  }
+}
 
-                engine.render();
-            }
+// onBuilt - promote billboards - keep mesh.material.map already resolved via ASSET_ALIASES
+tryLoadMaps(mapCandidates).then((built)=>{
+  room = built.room;
+  billboards = built.billboards || [];
+  setStatus('<b>D5 ICE PALACE READY</b> - ' + billboards.length + ' entities');
 
-            animate();
+  // Enemies - promote loaded billboards where type ENEMY, use its mesh directly
+  billboards.forEach((b)=>{
+    if(b.type === 'ENEMY' || (b.userData && b.userData.type==='ENEMY')){
+      const mesh = b.mesh || b;
+      const hp = getEnemyHP(mesh.material?.map?.image?.src || b.asset || 'SLIME-1-0.png');
+      mesh.userData.hp = hp;
+      mesh.userData.maxHP = hp;
+      mesh.userData.isEnemy = true;
+      // keep material.map which already resolved via ASSET_ALIASES to correct uppercase path
+      // e.g. assets/enemies/SLIME-1-0.png not enemy/slime.png
+    }
+    if(b.type === 'CHEST' || b.type === 'CHESTSM' || b.type === 'CHESTBG'){
+      b.mesh.userData.interactType = b.type;
+    }
+    if(b.type === 'DOOR' || b.type === 'SMDOOR' || b.type === 'BGDOOR'){
+      b.mesh.userData.interactType = b.type;
+    }
+    if(b.type === 'JAR'){
+      b.mesh.userData.interactType = 'JAR';
+    }
+  });
 
-            // Return to Lake
-            window.addEventListener('keydown', e => {
-                if (e.code === 'Escape') location.href = 'lake_sector.html';
-            });
-        });
-    </script>
+  combat = CombatSystemV3.create(scene, roomBuilder, player, {
+    enemies: billboards.filter(bb=>bb.mesh?.userData?.isEnemy).map(bb=>bb.mesh),
+    onHit: (enemy, dmg)=>{
+      enemy.userData.hp -= dmg;
+      if(enemy.userData.hp <= 0){
+        scene.remove(enemy);
+        kills++;
+        setStatus('kill +1 - total '+kills);
+        audio.playSFX('assets/sfx/enemy_die.mp3');
+      }
+    },
+    onPlayerHit: (dmg)=>{
+      playerState.damage(dmg);
+      paintHearts();
+      if(playerState.hp<=0){
+        setStatus('<b>YOU DIED - ESC to INDEX</b>');
+      }
+    }
+  });
+  combat.setWeaponDamage(InventorySystemV3.weaponDamage(inventory.equipped()?.id || 'woodsword'));
+
+  paintHearts();
+  paintEquip();
+
+}).catch(err=>{
+  setStatus('<b style="color:#ff6b6b">MAP LOAD FAILED:</b> '+err.message);
+  console.error(err);
+});
+
+// Input - same as d_1 / d_4
+const keys = { w:false, a:false, s:false, d:false, attack:false, interact:false };
+let audioStarted = false;
+
+addEventListener('keydown', (e)=>{
+  const k = e.key.toLowerCase();
+  if(k==='w') keys.w = true;
+  if(k==='a') keys.a = true;
+  if(k==='s') keys.s = true;
+  if(k==='d') keys.d = true;
+  if(k==='j' || k==='b' || k==='k' || k===' ') keys.attack = true;
+  if(k==='f' || k==='e') keys.interact = true;
+  if(k==='1'){ inventory.equip('woodsword'); paintEquip(); }
+  if(k==='2'){ inventory.equip('metalsword'); paintEquip(); }
+  if(k==='3'){ inventory.equip('plasmasword'); paintEquip(); }
+  if(k==='i'){ /* InventorySystemV3.toggle() */ setStatus('inventory: '+inventory.list().map(i=>i.id).join(', ')); }
+  if(k==='escape'){ location.href='index.html'; }
+
+  if(!audioStarted){
+    audioStarted = true;
+    // real music paths - uppercase with spaces - use ASSET_ALIASES fallback
+    audio.playMusic('assets/music/62 Ice Cavern..mp3').catch(()=>{
+      audio.playMusic('assets/music/13 Dank Dungeons.mp3');
+    });
+  }
+});
+addEventListener('keyup', (e)=>{
+  const k = e.key.toLowerCase();
+  if(k==='w') keys.w = false;
+  if(k==='a') keys.a = false;
+  if(k==='s') keys.s = false;
+  if(k==='d') keys.d = false;
+  if(k==='j' || k==='b' || k==='k' || k===' ') keys.attack = false;
+  if(k==='f' || k==='e') keys.interact = false;
+});
+
+// Main loop - uses existing V3 systems only
+let last = performance.now();
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.033, (now-last)/1000);
+  last = now;
+
+  // player movement via SpriteSystemV3 - respects FLOOR_Y rule
+  if(player && playerState.hp>0){
+    spriteSystem.updatePlayer(player, {
+      input: keys,
+      dt,
+      floorY: FLOOR_Y,
+      speed: 90
+    });
+  }
+
+  if(combat){
+    combat.update({ dt, keys, attack: keys.attack });
+  }
+
+  // interact ray
+  if(keys.interact){
+    keys.interact = false;
+    const hit = spriteSystem.rayInteract(player, billboards.map(b=>b.mesh||b), 64);
+    if(hit){
+      const t = hit.userData.interactType || hit.userData.type || '';
+      if(t.includes('CHEST')) openChest(hit, t);
+      else if(t.includes('DOOR')) tryDoor(hit, t);
+      else if(t==='JAR') breakJar(hit);
+      else if(hit.userData.isBigItem){
+        inventory.give('chromackey',1);
+        scene.remove(hit);
+        setStatus('found CHROMAC KEY');
+      }
+    }
+  }
+
+  camControls.update(player);
+  renderer.render(scene, camera);
+
+  // HUD coords - like d_4: X Y Lane Grounded HP
+  const ctrl = document.getElementById('controls');
+  if(player){
+    ctrl.innerHTML = `X:${player.position.x.toFixed(0)} Y:${player.position.z.toFixed(0)} LANE:${Math.floor(player.position.z/40)} GROUNDED:${player.userData.grounded?1:0} HP:${playerState.hp}<br/>[A/D] MOVE [W/S] AIM [SPACE] JUMP [J/B/K] THRUST`;
+  }
+}
+tick(performance.now());
+
+addEventListener('resize', ()=>{
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+</script>
 </body>
 </html>
